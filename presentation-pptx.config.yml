@@ -1,0 +1,83 @@
+plugin:
+  name: presentation-pptx
+  version: 1.0
+  vendor: Programmfabrik GmbH
+  server:
+    api-version:
+      require: 1
+  webfrontend:
+    url: build/webfrontend/PresentationPowerpoint.js
+    l10n: build/webfrontend/l10n/
+  # list of files, needed by python-pptx
+  python-pptx:
+    templates:
+      - name: default-white.pptx
+        slides:
+          - type: "start"
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "start"
+            show_info: true
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "one"
+            slide_idx: 1
+            picture: 13
+          - type: "one"
+            show_info: true
+            slide_idx: 2
+            picture: 13
+            text: 14
+          - type: "duo"
+            slide_idx: 3
+            picture_left: 13
+            picture_right: 14
+          - type: "duo"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            picture_right: 14
+            text_left: 18
+            text_right: 19
+
+      - name: default-black.pptx
+        slides:
+          - type: "start"
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "start"
+            show_info: true
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "one"
+            slide_idx: 1
+            picture: 13
+          - type: "one"
+            show_info: true
+            slide_idx: 2
+            picture: 13
+            text: 14
+          - type: "duo"
+            slide_idx: 3
+            picture_left: 13
+            picture_right: 14
+          - type: "duo"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            picture_right: 14
+            text_left: 18
+            text_right: 19
+
+    qualities:
+      - 10000
+      - 1024
+      - 640
+
+
+python-2:
+  file: src/server/presentation-pptx.py

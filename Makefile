@@ -6,8 +6,9 @@ INSTALL_FILES = \
 	$(WEB)/l10n/es-ES.json \
 	$(WEB)/l10n/it-IT.json \
 	$(WEB)/PresentationPowerpoint.js \
-	src/server/PresentationPowerpoint.py \
-	src/server/default.pptx \
+	src/server/presentation-pptx.py \
+	src/server/default-black.pptx \
+	src/server/default-white.pptx \
 	presentation-pptx.config.yml
 
 L10N_FILES = l10n/PresentationPowerpoint.csv

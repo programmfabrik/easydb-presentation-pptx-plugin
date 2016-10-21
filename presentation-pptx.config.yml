@@ -6,8 +6,8 @@ plugin:
     api-version:
       require: 1
   webfrontend:
-    url: build/webfrontend/PresentationPowerpoint.js
-    l10n: build/webfrontend/l10n/
+    url: PresentationPowerpoint.js
+    l10n: l10n/
   # list of files, needed by python-pptx
   python-pptx:
     templates:

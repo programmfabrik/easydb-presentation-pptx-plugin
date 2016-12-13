@@ -36,6 +36,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 	getExportSaveData: ->
 		data = super()
 		data.export.produce_options.pptx_form = copyObject(@pptx_form, true)
+		delete(data.export.produce_options.pptx_form._undo)
 		console.debug "export save data:", dump(data)
 		data
 
@@ -62,6 +63,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			form:
 				label: $$(@loca_key("form.label.template"))
 			type: Options
+			undo_and_changed_support: false
 			name: "template"
 			options: template_opts
 			radio: true
@@ -79,12 +81,14 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			form:
 				label: $$(@loca_key("form.label.quality"))
 			type: Select
+			undo_and_changed_support: false
 			name: "quality"
 			options: quality_opts
 
 		# add hint at the end
 		fields.push
 			type: Output
+			undo_and_changed_support: false
 			form:
 				use_field_as_label: true
 			placeholder: $$(@loca_key("form.hint"))
@@ -92,6 +96,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		console.debug "pptx_form", @pptx_form
 
 		new Form
+			undo_and_changed_support: false
 			data: @pptx_form
 			fields: fields
 		.start()

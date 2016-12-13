@@ -40,7 +40,7 @@ def produce_files(easydb_context, parameters, protocol = None):
             break
 
     logger.debug("----%s-----" % plugin["name"])
-    logger.debug(json.dumps(plugin, indent = 2))
+    # logger.debug(json.dumps(plugin, indent = 2))
     logger.debug("------")
     logger.debug("%s" % json.dumps(produce_opts, indent = 2))
     logger.debug("------")
@@ -110,19 +110,34 @@ def produce_files(easydb_context, parameters, protocol = None):
                 placeholder.insert_picture(exp.getFilesPath()+"/"+_file["path"])
                 break
 
-
     for slide in produce_opts["presentation"]["slides"]:
         stype = slide["type"]
 
         sl = slide_layouts[stype]
         sl_info = sl["info"]
 
-        print "adding slide", stype, repr(sl_info)
+        print "adding slide", stype, repr(sl_info), repr(slide)
         ppt_slide = prs.slides.add_slide(sl["layout"])
 
         if stype == "start":
             title = ppt_slide.placeholders[sl_info["title"]].text = slide["data"]["title"]
             subtitle = ppt_slide.placeholders[sl_info["subtitle"]].text = slide["data"]["info"]
+
+        if stype == "bullets":
+            title = ppt_slide.placeholders[sl_info["title"]].text = slide["data"]["title"]
+            # bullets = ppt_slide.placeholders[sl_info["bullets"]].text = slide["data"]["info"]
+
+            text_frame = ppt_slide.placeholders[sl_info["bullets"]].text_frame
+            text_frame.clear()  # remove any existing paragraphs, leaving one empty one
+
+            rows = slide["data"]["info"].split("\n")
+
+            p = text_frame.paragraphs[0]
+            p.text = rows[0]
+
+            for row in rows[1:]:
+                p = text_frame.add_paragraph()
+                p.text = row
 
         if stype == "one":
             if "global_object_id" in slide["center"]:

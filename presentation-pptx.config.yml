@@ -41,6 +41,15 @@ plugin:
             picture_right: 14
             text_left: 18
             text_right: 19
+          - type: "bullets"
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "bullets"
+            show_info: true
+            slide_idx: 5
+            title: 0
+            bullets: 18
 
       - name: default-black.pptx
         slides:
@@ -72,6 +81,15 @@ plugin:
             picture_right: 14
             text_left: 18
             text_right: 19
+          - type: "bullets"
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "bullets"
+            show_info: true
+            slide_idx: 5
+            title: 0
+            bullets: 18
 
     qualities:
       - 10000

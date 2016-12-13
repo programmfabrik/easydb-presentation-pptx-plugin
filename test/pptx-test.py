@@ -3,7 +3,7 @@ from pptx import Presentation
 from pptx.util import Inches
 import os
 
-prs1 = Presentation("default-white.pptx")
+prs1 = Presentation("../src/server/default-black.pptx")
 idx = 0
 
 for slide_layout in prs1.slide_layouts:

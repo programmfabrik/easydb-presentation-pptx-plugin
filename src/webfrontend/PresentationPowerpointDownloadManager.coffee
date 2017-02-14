@@ -89,8 +89,6 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		fields.push
 			type: Output
 			undo_and_changed_support: false
-			form:
-				use_field_as_label: true
 			placeholder: $$(@loca_key("form.hint"))
 
 		console.debug "pptx_form", @pptx_form

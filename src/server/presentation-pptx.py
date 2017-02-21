@@ -84,7 +84,7 @@ def produce_files(easydb_context, parameters, protocol = None):
             standard = data_by_gid[gid]["standard_info"]["1"]
             txBox = ppt_slide.shapes.add_textbox(left, top, width, height)
             txBox.text_frame.text = standard
-            print "  standard", standard
+            # print "  standard", standard
 
     def insert_info(placeholder, gid):
         if gid not in data_by_gid:
@@ -93,17 +93,18 @@ def produce_files(easydb_context, parameters, protocol = None):
         if "1" in data_by_gid[gid]["standard_info"]:
             standard = data_by_gid[gid]["standard_info"]["1"]
             placeholder.text_frame.text = standard
-            print "  standard", standard
+            # print "  standard", standard
 
 
     def insert_picture(placeholder, gid):
 
-        if gid not in data_by_gid:
+        try:
+            eas_id = data_by_gid[gid]["asset_ids"][0]
+        except(IndexError, KeyError):
+            logger.warn("No EAS-ID found for GID %s" % gid)
             return
 
-        eas_id = data_by_gid[gid]["asset_ids"][0]
-
-        print "  pic", eas_id
+        logger.debug("EAS-ID %s found for GID %s." % (eas_id, gid))
 
         for _file in  exp.getFiles():
             if _file["eas_id"] == eas_id:
@@ -116,7 +117,7 @@ def produce_files(easydb_context, parameters, protocol = None):
         sl = slide_layouts[stype]
         sl_info = sl["info"]
 
-        print "adding slide", stype, repr(sl_info), repr(slide)
+        # print "adding slide", stype, repr(sl_info), repr(slide)
         ppt_slide = prs.slides.add_slide(sl["layout"])
 
         if stype == "start":

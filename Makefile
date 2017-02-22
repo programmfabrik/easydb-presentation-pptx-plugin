@@ -13,6 +13,9 @@ INSTALL_FILES = \
 
 L10N_FILES = l10n/PresentationPowerpoint.csv
 
+L10N_GOOGLE_KEY = 1glXObMmIUd0uXxdFdiPWRZPLCx6qEUaxDfNnmttave4
+L10N_GOOGLE_GID = 1786140544
+
 JS = $(WEB)/PresentationPowerpoint.js
 COFFEE_FILES = src/webfrontend/PresentationPowerpointDownloadManager.coffee
 

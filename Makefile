@@ -21,7 +21,7 @@ COFFEE_FILES = src/webfrontend/PresentationPowerpointDownloadManager.coffee
 
 all: build
 
-include ../base-plugins.make
+include ../../easydb-library/tools/base-plugins.make
 
 build: code
 
@@ -35,3 +35,5 @@ $(dev_js): $(coffee_dev_files)
 
 clean: clean-base
 	rm -f $(dev_js)
+
+wipe: wipe-base

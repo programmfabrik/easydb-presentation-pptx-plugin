@@ -93,7 +93,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 
 		console.debug "pptx_form", @pptx_form
 
-		new Form
+		new CUI.Form
 			undo_and_changed_support: false
 			data: @pptx_form
 			fields: fields

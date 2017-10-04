@@ -4,7 +4,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		super()
 
 	loca_key: (key) ->
-		toDot(@__cls)+"."+key
+		CUI.util.toDot(@__cls)+"."+key
 
 
 	getMenuButton: ->
@@ -37,9 +37,8 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		data = super()
 		data.export.produce_options.pptx_form = CUI.util.copyObject(@pptx_form, true)
 		delete(data.export.produce_options.pptx_form._undo)
-		console.debug "export save data:", CUI.util.dump(data)
+		# console.debug "export save data:", CUI.util.dump(data)
 		data
-
 
 	getContent: ->
 		pptx_config = ez5.pluginManager.getPlugin("presentation-pptx").getOpts()
@@ -63,7 +62,6 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			form:
 				label: $$(@loca_key("form.label.template"))
 			type: CUI.Options
-			undo_and_changed_support: false
 			name: "template"
 			options: template_opts
 			radio: true
@@ -81,20 +79,17 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			form:
 				label: $$(@loca_key("form.label.quality"))
 			type: CUI.Select
-			undo_and_changed_support: false
 			name: "quality"
 			options: quality_opts
 
 		# add hint at the end
 		fields.push
 			type: CUI.Output
-			undo_and_changed_support: false
 			placeholder: $$(@loca_key("form.hint"))
 
-		console.debug "pptx_form", @pptx_form
+		# console.debug "pptx_form", @pptx_form
 
 		new CUI.Form
-			undo_and_changed_support: false
 			data: @pptx_form
 			fields: fields
 		.start()

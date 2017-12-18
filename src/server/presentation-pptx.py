@@ -9,6 +9,7 @@ import shutil
 import pprint
 from pptx import Presentation
 from pptx.util import Inches
+from PIL import Image
 
 def easydb_server_start(easydb_context):
     logger = easydb_context.get_logger('presentation-pptx')
@@ -39,11 +40,11 @@ def produce_files(easydb_context, parameters, protocol = None):
         if plugin["name"] == "presentation-pptx":
             break
 
-    logger.debug("----%s-----" % plugin["name"])
+    # logger.debug("----%s-----" % plugin["name"])
     # logger.debug(json.dumps(plugin, indent = 2))
-    logger.debug("------")
-    logger.debug("%s" % json.dumps(produce_opts, indent = 2))
-    logger.debug("------")
+    # logger.debug("------")
+    # logger.debug("%s" % json.dumps(produce_opts, indent = 2))
+    # logger.debug("------")
     # logger.debug("%s" % json.dumps(exp.getFiles(), indent = 2))
 
     # print "%s" % json.dumps(exp.getFiles(), indent = 2)
@@ -96,7 +97,7 @@ def produce_files(easydb_context, parameters, protocol = None):
             # print "  standard", standard
 
 
-    def insert_picture(placeholder, gid):
+    def insert_picture(placeholder, gid, shapes):
 
         try:
             eas_id = data_by_gid[gid]["asset_ids"][0]
@@ -104,11 +105,52 @@ def produce_files(easydb_context, parameters, protocol = None):
             logger.warn("No EAS-ID found for GID %s" % gid)
             return
 
-        logger.debug("EAS-ID %s found for GID %s." % (eas_id, gid))
-
         for _file in  exp.getFiles():
             if _file["eas_id"] == eas_id:
-                placeholder.insert_picture(exp.getFilesPath()+"/"+_file["path"])
+                filename = exp.getFilesPath() + "/" + _file["path"]
+
+                try:
+                    # get placeholder size in emus
+                    pw_emu = float(placeholder.width)
+                    ph_emu = float(placeholder.height)
+
+                    img = Image.open(filename)
+                    iw = img.width
+                    ih = img.height
+                    dpi = img.info["dpi"]
+
+                    # convert image size from pixels to emus
+                    iw_emu = float(iw * (914400 / dpi[0]))
+                    ih_emu = float(ih * (914400 / dpi[1]))
+
+                    h_ratio = iw_emu / pw_emu
+                    w_ratio = ih_emu / ph_emu
+
+                    # scale down to fit the longer image side into the shorter placeholder side
+                    new_x = 0
+                    new_y = 0
+                    new_h = 0
+                    new_w = 0
+                    if h_ratio >= w_ratio:
+                        new_h = int(ih_emu / h_ratio)
+                        new_w = int(iw_emu / h_ratio)
+                        new_y = (ph_emu - new_h) / 2
+                    else:
+                        new_h = int(ih_emu / w_ratio)
+                        new_w = int(iw_emu / w_ratio)
+                        new_x = (pw_emu - new_w) / 2
+
+                    logger.debug("remove placeholder, resize and position image directly in slide")
+                    shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height = new_h)
+
+                    # remove the original placeholder since it is not needed
+                    placeholder._element.getparent().remove(placeholder._element)
+
+                except Exception as e:
+                    logger.warn("could not fit image into slide, will use placeholder: " + str(e))
+                    # fallback: insert the picture without any resizing into the original placeholder
+                    placeholder.insert_picture(filename)
+
                 break
 
     for slide in produce_opts["presentation"]["slides"]:
@@ -146,7 +188,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                     insert_info(ppt_slide.placeholders[sl_info["text"]],
                                 slide["center"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture"]],
-                               slide["center"]["global_object_id"])
+                               slide["center"]["global_object_id"],
+                                ppt_slide.shapes)
 
         if stype == "duo":
             if "global_object_id" in slide["left"]:
@@ -154,14 +197,16 @@ def produce_files(easydb_context, parameters, protocol = None):
                     insert_info(ppt_slide.placeholders[sl_info["text_left"]],
                                 slide["left"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_left"]],
-                               slide["left"]["global_object_id"])
+                               slide["left"]["global_object_id"],
+                                ppt_slide.shapes)
 
             if "global_object_id" in slide["right"]:
                 if show_info:
                     insert_info(ppt_slide.placeholders[sl_info["text_right"]],
                                 slide["right"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_right"]],
-                               slide["right"]["global_object_id"])
+                               slide["right"]["global_object_id"],
+                                ppt_slide.shapes)
 
 
     pack_dir = easydb_context.get_temp_dir()
@@ -172,149 +217,3 @@ def produce_files(easydb_context, parameters, protocol = None):
     exp.addFile(pptx_filename, target_filename)
 
 
-
-
-
-
-    return
-
-    op = plugin["offlineplayer"]
-
-    pack_dir = easydb_context.get_temp_dir()
-
-    basepath = os.path.abspath(os.path.dirname(__file__))
-
-    json_files = []
-
-    for _file in  exp.getFiles():
-        fn_split = os.path.splitext(_file["path"])
-        if fn_split[1] != ".json":
-            continue
-        barename = os.path.basename(fn_split[0])
-        json_files.append({"barename": barename, "path": _file["path"]})
-
-    json_files_remove = []
-
-    for _file in exp.getFiles():
-        fn_split = os.path.splitext(_file["path"])
-        if fn_split[1] == ".json":
-            continue
-
-        found_license = None
-        for _license in produce_opts["licenses"]:
-            [_cls, _version] = _license["drm_lizenzen"]["version"].split(".")
-            if (_license["drm_lizenzen"]["eas_id"] == _file["eas_id"]
-                and _cls == _file["eas_fileclass"]
-                and _version == _file["eas_version"]):
-                found_license = _license
-
-        if not found_license:
-            logger.debug("Skipping file %s, no license found." % _file["path"])
-            continue
-
-        barename = os.path.basename(fn_split[0])
-        logger.debug("Producing .exe for %s%s." % (exp.getFilesPath(), _file))
-
-        if os.path.isdir(pack_dir+"/files"):
-            shutil.rmtree(pack_dir+"/files")
-
-        logger.debug("file: %s" % _file)
-        info = {
-            "files": [],
-            "licenses": [ found_license ],
-            "tester": "henk'horst'"
-            }
-
-        # pack the CUI app into app.nw
-        myzip = zipfile.ZipFile(pack_dir+"/app.nw", "w")
-
-        for __file in op["app"]["files"]:
-            fn = basepath+"/"+op["app"]["path"]+"/"+__file
-            myzip.write(fn, __file)
-
-        # add file from export
-        fn = exp.getFilesPath()+"/"+_file["path"]
-        name_in_zip = "files/"+os.path.basename(_file["path"])
-        myzip.write(fn, name_in_zip)
-        info["files"].append({"path": name_in_zip, "size": _file["size"]})
-
-        logger.debug("Removing file: %s" % _file["path"])
-        exp.removeFile(_file["path"])
-
-        for __file in exp.getFiles():
-            logger.debug("file after removal: %s" % __file)
-
-        for json_file in json_files:
-            logger.debug("name in zip: %s, json_file barename: %s" % (name_in_zip, json_file["barename"]))
-            if name_in_zip.startswith("files/"+json_file["barename"]):
-                json_in_zip = "files/"+os.path.basename(fn_split[0])+".json"
-                json_file_path = exp.getFilesPath()+"/"+json_file["path"]
-                if not json_file["path"] in json_files_remove:
-                    json_files_remove.append(json_file["path"])
-                myzip.write(json_file_path, json_in_zip)
-
-        myzip.writestr("info.js", "var info="+json.dumps(info)+";")
-        myzip.close()
-
-        # create merged nw.exe and copy all necessary file to our pack directory
-        path = basepath+"/"+op["nw.js"]["path"]
-
-        files = []
-
-        add_file(path+"/"+op["nw.js"]["nw.exe"], "video.exe")
-        files.append(u"video.exe")
-
-        f = open(pack_dir+"/video.exe", "ab")
-        fi = open(pack_dir+"/app.nw", "rb")
-        f.write(fi.read())
-        fi.close()
-        f.close()
-
-        for __file in op["nw.js"]["files"]:
-            add_file(path+"/"+__file, __file)
-            files.append(__file)
-
-        # os.remove(pack_dir+"/app.nw")
-
-        call = [basepath+"/"+op["7z.exe"], "a", "-mx=0", "video.7z"]
-        for __file in files:
-            call.append(__file)
-
-        p = subprocess.Popen(
-            call,
-            cwd=pack_dir,
-            # shell=True,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-            )
-
-        (out, err) = p.communicate()
-        returncode = p.returncode
-
-        f = open(pack_dir+"/video_all.exe", "ab")
-        # add starter
-        fi = open(basepath+"/"+op["7zsd.sfx"], "rb")
-        f.write(fi.read())
-        fi.close()
-        # add config
-        fi = open(basepath+"/"+op["config.txt"], "rb")
-        f.write(fi.read())
-        fi.close()
-        # add video
-        fi = open(pack_dir+"/video.7z", "rb")
-        f.write(fi.read())
-        fi.close()
-        f.close()
-
-        exp.addFile(pack_dir+"/video_all.exe", os.path.basename(fn_split[0])+".exe")
-        logger.debug("produced: %s for %s " % (pack_dir+"/video_all.exe", _file))
-
-
-    logger.debug("Removing %s" % json_files_remove)
-
-    for file_path in json_files_remove:
-        logger.debug("Removing file: %s" % file_path)
-        exp.removeFile(file_path)
-
-    return

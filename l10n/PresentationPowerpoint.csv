@@ -4,7 +4,7 @@ presentation.powerpoint.download.manager.form.label.template,Format,Format,,
 presentation.powerpoint.download.manager.form.template.default.pptx,Standard 4:3,Standard 4:3,Standard 4:3,Standard 4:3
 presentation.powerpoint.download.manager.form.template.default-white.pptx,Weiß 4:3,White 4:3,,
 presentation.powerpoint.download.manager.form.template.default-black.pptx,Schwarz 4:3,Black 4:3,,
-presentation.powerpoint.download.manager.form.hint,Im eine Powerpoint werden nur Bilder exportiert. Andere Formate werden mit einem Standbild exportiert.,The export for Powerpoint does only support pictures. Other formats will be exported as freeze image.,,
+presentation.powerpoint.download.manager.form.hint,In einer Powerpoint werden nur Bilder exportiert. Andere Formate werden mit einem Standbild exportiert.,The export for Powerpoint does only support pictures. Other formats will be exported as freeze image.,,
 presentation.powerpoint.download.manager.form.label.quality,Qualität,Quality,,
 presentation.powerpoint.download.manager.form.quality.10000,Beste Qualität (Original),High Quality (Original),,
 presentation.powerpoint.download.manager.form.quality.1024,Mittel (1024px),Middle (1024px),,

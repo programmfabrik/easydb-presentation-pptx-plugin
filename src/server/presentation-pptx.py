@@ -10,6 +10,8 @@ import pprint
 from pptx import Presentation
 from pptx.util import Inches
 from PIL import Image
+from context import get_json_value
+
 
 def easydb_server_start(easydb_context):
     logger = easydb_context.get_logger('presentation-pptx')
@@ -97,10 +99,13 @@ def produce_files(easydb_context, parameters, protocol = None):
             # print "  standard", standard
 
 
-    def insert_picture(placeholder, gid, shapes):
+    def insert_picture(placeholder, gid, shapes, asset_position = None):
 
         try:
-            eas_id = data_by_gid[gid]["asset_ids"][0]
+            if asset_position is None:
+                eas_id = data_by_gid[gid]["asset_ids"][0]
+            else:
+                eas_id = data_by_gid[gid]["asset_ids"][asset_position]
         except(IndexError, KeyError):
             logger.warn("No EAS-ID found for GID %s" % gid)
             return
@@ -189,7 +194,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["center"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture"]],
                                slide["center"]["global_object_id"],
-                                ppt_slide.shapes)
+                               ppt_slide.shapes,
+                               get_json_value(slide["center"], "asset_position"))
 
         if stype == "duo":
             if "global_object_id" in slide["left"]:
@@ -198,7 +204,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["left"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_left"]],
                                slide["left"]["global_object_id"],
-                                ppt_slide.shapes)
+                               ppt_slide.shapes,
+                               get_json_value(slide["left"], "asset_position"))
 
             if "global_object_id" in slide["right"]:
                 if show_info:
@@ -206,7 +213,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["right"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_right"]],
                                slide["right"]["global_object_id"],
-                                ppt_slide.shapes)
+                               ppt_slide.shapes,
+                               get_json_value(slide["right"], "asset_position"))
 
 
     pack_dir = easydb_context.get_temp_dir()

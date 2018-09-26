@@ -7,6 +7,8 @@ import glob
 import zipfile
 import shutil
 import pprint
+import hashlib
+import urllib
 from pptx import Presentation
 from pptx.util import Inches
 from PIL import Image
@@ -99,59 +101,95 @@ def produce_files(easydb_context, parameters, protocol = None):
             # print "  standard", standard
 
 
-    def insert_picture(placeholder, shapes, eas_id = None):
+    def insert_picture(placeholder, shapes, eas_id, asset_url = None):
 
-        if eas_id is None:
-            logger.warn("no asset id given for insert_picture")
+        if eas_id is None and asset_url is None:
+            logger.warn("no asset id or asset url is given for insert_picture")
             return
 
-        for _file in  exp.getFiles():
-            if _file["eas_id"] == eas_id:
-                filename = exp.getFilesPath() + "/" + _file["path"]
+        filename = None
+        use_connector_url = False
 
-                try:
-                    # get placeholder size in emus
-                    pw_emu = float(placeholder.width)
-                    ph_emu = float(placeholder.height)
+        if asset_url is not None:
+            try:
+                # download the image file, save it in the export asset folder
+                m = hashlib.sha1(asset_url)
+                filename = exp.getFilesPath() + "/" + str(m.hexdigest())
 
-                    img = Image.open(filename)
-                    iw = img.width
-                    ih = img.height
-                    dpi = img.info["dpi"]
+                url_parts = asset_url.split('/')
+                if len(url_parts) > 1:
+                    filename += "." + url_parts[-1]
 
-                    # convert image size from pixels to emus
-                    iw_emu = float(iw * (914400 / dpi[0]))
-                    ih_emu = float(ih * (914400 / dpi[1]))
+                urllib.urlretrieve(asset_url, filename)
+                use_connector_url = True
+            except Exception as e:
+                logger.warn("could not download connector image: " + str(e))
+                return
+        else:
+            for _file in  exp.getFiles():
+                if _file["eas_id"] == eas_id:
+                    filename = exp.getFilesPath() + "/" + _file["path"]
+                    break
 
-                    h_ratio = iw_emu / pw_emu
-                    w_ratio = ih_emu / ph_emu
+        if filename is None:
+            logger.debug("no asset file name could be found in insert_picture")
+            return
 
-                    # scale down to fit the longer image side into the shorter placeholder side
-                    new_x = 0
-                    new_y = 0
-                    new_h = 0
-                    new_w = 0
-                    if h_ratio >= w_ratio:
-                        new_h = int(ih_emu / h_ratio)
-                        new_w = int(iw_emu / h_ratio)
-                        new_y = (ph_emu - new_h) / 2
-                    else:
-                        new_h = int(ih_emu / w_ratio)
-                        new_w = int(iw_emu / w_ratio)
-                        new_x = (pw_emu - new_w) / 2
+        try:
+            if use_connector_url:
+                logger.debug("load connector image " + filename)
+            else:
+                logger.debug("load exported image from local instance " + filename)
+            img = Image.open(filename)
+        except Exception as e:
+            if use_connector_url:
+                logger.warn("could not load connector image: " + str(e))
+            else:
+                logger.warn("could not load exported image from local instance slide: " + str(e))
 
-                    logger.debug("remove placeholder, resize and position image directly in slide")
-                    shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height = new_h)
+        # get placeholder size in emus
+        pw_emu = float(placeholder.width)
+        ph_emu = float(placeholder.height)
 
-                    # remove the original placeholder since it is not needed
-                    placeholder._element.getparent().remove(placeholder._element)
+        iw = img.width
+        ih = img.height
 
-                except Exception as e:
-                    logger.warn("could not fit image into slide, will use placeholder: " + str(e))
-                    # fallback: insert the picture without any resizing into the original placeholder
-                    placeholder.insert_picture(filename)
+        try:
+            if "dpi" in img.info:
+                dpi = img.info["dpi"]
+            else:
+                # simply assume square pixels
+                dpi = (72, 72)
 
-                break
+            # convert image size from pixels to emus
+            iw_emu = float(iw * (914400 / dpi[0]))
+            ih_emu = float(ih * (914400 / dpi[1]))
+
+            h_ratio = iw_emu / pw_emu
+            w_ratio = ih_emu / ph_emu
+
+            # scale down to fit the longer image side into the shorter placeholder side
+            new_x = 0
+            new_y = 0
+            new_h = 0
+            new_w = 0
+            if h_ratio >= w_ratio:
+                new_h = int(ih_emu / h_ratio)
+                new_w = int(iw_emu / h_ratio)
+                new_y = (ph_emu - new_h) / 2
+            else:
+                new_h = int(ih_emu / w_ratio)
+                new_w = int(iw_emu / w_ratio)
+                new_x = (pw_emu - new_w) / 2
+
+            shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height = new_h)
+
+            # remove the original placeholder since it is not needed
+            placeholder._element.getparent().remove(placeholder._element)
+
+        except Exception as e:
+            logger.warn("could not get image resolution / size information, will insert image " + filename + " into placeholder")
+            placeholder.insert_picture(filename)
 
     for slide in produce_opts["presentation"]["slides"]:
         stype = slide["type"]
@@ -189,7 +227,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["center"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture"]],
                                ppt_slide.shapes,
-                               get_json_value(slide["center"], "asset_id"))
+                               get_json_value(slide["center"], "asset_id"),
+                               get_json_value(slide["center"], "asset_url"))
 
         if stype == "duo":
             if "global_object_id" in slide["left"]:
@@ -198,7 +237,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["left"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_left"]],
                                ppt_slide.shapes,
-                               get_json_value(slide["left"], "asset_id"))
+                               get_json_value(slide["left"], "asset_id"),
+                               get_json_value(slide["left"], "asset_url"))
 
             if "global_object_id" in slide["right"]:
                 if show_info:
@@ -206,7 +246,8 @@ def produce_files(easydb_context, parameters, protocol = None):
                                 slide["right"]["global_object_id"])
                 insert_picture(ppt_slide.placeholders[sl_info["picture_right"]],
                                ppt_slide.shapes,
-                               get_json_value(slide["right"], "asset_id"))
+                               get_json_value(slide["right"], "asset_id"),
+                               get_json_value(slide["right"], "asset_url"))
 
 
     pack_dir = easydb_context.get_temp_dir()

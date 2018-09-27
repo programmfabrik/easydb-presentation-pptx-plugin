@@ -100,7 +100,6 @@ def produce_files(easydb_context, parameters, protocol = None):
             placeholder.text_frame.text = standard
             # print "  standard", standard
 
-
     def insert_picture(placeholder, shapes, eas_id, asset_url = None):
 
         if eas_id is None and asset_url is None:
@@ -153,18 +152,12 @@ def produce_files(easydb_context, parameters, protocol = None):
             pw_emu = float(placeholder.width)
             ph_emu = float(placeholder.height)
 
-            iw = img.width
-            ih = img.height
-
-            if "dpi" in img.info:
-                dpi = img.info["dpi"]
-            else:
-                # simply assume square pixels
-                dpi = (72, 72)
+            iw, ih = img.size
 
             # convert image size from pixels to emus
-            iw_emu = float(iw * (914400 / dpi[0]))
-            ih_emu = float(ih * (914400 / dpi[1]))
+            dpi = 72
+            iw_emu = float(iw * (914400 / dpi))
+            ih_emu = float(ih * (914400 / dpi))
 
             h_ratio = iw_emu / pw_emu
             w_ratio = ih_emu / ph_emu
@@ -187,11 +180,9 @@ def produce_files(easydb_context, parameters, protocol = None):
 
             # remove the original placeholder since it is not needed
             placeholder._element.getparent().remove(placeholder._element)
-
         except Exception as e:
             logger.warn("could not get image resolution / size information, will insert image " + filename + " into placeholder")
             placeholder.insert_picture(filename)
-
 
     for slide in produce_opts["presentation"]["slides"]:
         stype = slide["type"]
@@ -258,5 +249,3 @@ def produce_files(easydb_context, parameters, protocol = None):
 
     prs.save(pptx_filename)
     exp.addFile(pptx_filename, target_filename)
-
-

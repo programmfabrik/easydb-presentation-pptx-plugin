@@ -146,15 +146,16 @@ def produce_files(easydb_context, parameters, protocol = None):
                 logger.warn("could not load connector image: " + str(e))
             else:
                 logger.warn("could not load exported image from local instance slide: " + str(e))
-
-        # get placeholder size in emus
-        pw_emu = float(placeholder.width)
-        ph_emu = float(placeholder.height)
-
-        iw = img.width
-        ih = img.height
+            return
 
         try:
+            # get placeholder size in emus
+            pw_emu = float(placeholder.width)
+            ph_emu = float(placeholder.height)
+
+            iw = img.width
+            ih = img.height
+
             if "dpi" in img.info:
                 dpi = img.info["dpi"]
             else:
@@ -190,6 +191,7 @@ def produce_files(easydb_context, parameters, protocol = None):
         except Exception as e:
             logger.warn("could not get image resolution / size information, will insert image " + filename + " into placeholder")
             placeholder.insert_picture(filename)
+
 
     for slide in produce_opts["presentation"]["slides"]:
         stype = slide["type"]

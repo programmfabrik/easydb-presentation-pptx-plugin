@@ -19,6 +19,10 @@ def easydb_server_start(easydb_context):
     })
 
 
+def pixels_to_emu(px, dpi=72):
+    return float(px * (914400 / dpi))
+
+
 def produce_files(easydb_context, parameters, protocol=None):
     global pack_dir
 
@@ -46,15 +50,15 @@ def produce_files(easydb_context, parameters, protocol=None):
 
     standard_format = {
         '1': {
-            'size': 30,
+            'size': 26,
             'bold': True
         },
         '2': {
-            'size': 24,
+            'size': 19,
             'bold': False
         },
         '3': {
-            'size': 20,
+            'size': 16,
             'bold': False
         }
     }
@@ -83,11 +87,17 @@ def produce_files(easydb_context, parameters, protocol=None):
 
     data_by_gid = produce_opts['presentation']['data_by_gid']
 
-    def insert_info(placeholder, shapes, gid):
+    def insert_info(placeholder, shapes, gid, picture_bottom_line=None):
         if gid not in data_by_gid:
             return
 
-        text_box = shapes.add_textbox(placeholder.left, placeholder.top, placeholder.width, placeholder.height)
+        top = placeholder.top
+
+        if picture_bottom_line is not None:
+            top = min([picture_bottom_line + pixels_to_emu(10), top])
+
+        text_box = shapes.add_textbox(placeholder.left, top, placeholder.width, placeholder.height)
+        text_box.text_frame.word_wrap = True
 
         first_standard_value = True
         for s in show_standard:
@@ -107,7 +117,7 @@ def produce_files(easydb_context, parameters, protocol=None):
 
                 p.text = _s
                 p.alignment = PP_ALIGN.CENTER
-                p.font.name = 'FreeSans'
+                p.font.name = 'Helvetica'
                 p.font.size = Pt(standard_format[s]['size'])
                 p.font.bold = standard_format[s]['bold']
 
@@ -115,6 +125,8 @@ def produce_files(easydb_context, parameters, protocol=None):
         placeholder._element.getparent().remove(placeholder._element)
 
     def insert_picture(placeholder, shapes, eas_id, asset_url=None):
+
+        picture_bottom_line = None
 
         if eas_id is None and asset_url is None:
             logger.warn('no asset id or asset url is given for insert_picture')
@@ -169,9 +181,8 @@ def produce_files(easydb_context, parameters, protocol=None):
             iw, ih = img.size
 
             # convert image size from pixels to emus
-            dpi = 72
-            iw_emu = float(iw * (914400 / dpi))
-            ih_emu = float(ih * (914400 / dpi))
+            iw_emu = pixels_to_emu(iw)
+            ih_emu = pixels_to_emu(ih)
 
             h_ratio = iw_emu / pw_emu
             w_ratio = ih_emu / ph_emu
@@ -192,11 +203,15 @@ def produce_files(easydb_context, parameters, protocol=None):
 
             shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height=new_h)
 
+            picture_bottom_line = new_y + placeholder.top + new_h
+
             # remove the original placeholder since it is not needed
             placeholder._element.getparent().remove(placeholder._element)
         except Exception as e:
             logger.warn('could not get image resolution / size information, will insert image %s into placeholder' % filename)
             placeholder.insert_picture(filename)
+
+        return picture_bottom_line
 
     for slide in produce_opts['presentation']['slides']:
         stype = slide['type']
@@ -208,11 +223,14 @@ def produce_files(easydb_context, parameters, protocol=None):
         ppt_slide = prs.slides.add_slide(sl['layout'])
 
         if stype == 'start':
-            ppt_slide.placeholders[sl_info['title']].text = slide['data']['title']
-            ppt_slide.placeholders[sl_info['subtitle']].text = slide['data']['info']
+            ppt_slide.placeholders[sl_info['title']
+                                   ].text = slide['data']['title']
+            ppt_slide.placeholders[sl_info['subtitle']
+                                   ].text = slide['data']['info']
 
         if stype == 'bullets':
-            ppt_slide.placeholders[sl_info['title']].text = slide['data']['title']
+            ppt_slide.placeholders[sl_info['title']
+                                   ].text = slide['data']['title']
 
             text_frame = ppt_slide.placeholders[sl_info['bullets']].text_frame
             text_frame.clear()  # remove any existing paragraphs, leaving one empty one
@@ -229,35 +247,49 @@ def produce_files(easydb_context, parameters, protocol=None):
         if stype == 'one':
             if 'global_object_id' in slide['center']:
 
+                picture_bottom_line = insert_picture(ppt_slide.placeholders[sl_info['picture']],
+                                                     ppt_slide.shapes,
+                                                     get_json_value(
+                                                         slide['center'], 'asset_id'),
+                                                     get_json_value(slide['center'], 'asset_url'))
+
                 insert_info(ppt_slide.placeholders[sl_info['text']],
                             ppt_slide.shapes,
-                            slide['center']['global_object_id'])
-
-                insert_picture(ppt_slide.placeholders[sl_info['picture']],
-                               ppt_slide.shapes,
-                               get_json_value(slide['center'], 'asset_id'),
-                               get_json_value(slide['center'], 'asset_url'))
+                            slide['center']['global_object_id'],
+                            picture_bottom_line)
 
         if stype == 'duo':
+            picture_bottom_lines = []
+
+            if 'global_object_id' in slide['left']:
+                picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
+                                                           ppt_slide.shapes,
+                                                           get_json_value(
+                                                               slide['left'], 'asset_id'),
+                                                           get_json_value(slide['left'], 'asset_url')))
+
+            if 'global_object_id' in slide['right']:
+                picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_right']],
+                                                           ppt_slide.shapes,
+                                                           get_json_value(
+                                                               slide['right'], 'asset_id'),
+                                                           get_json_value(slide['right'], 'asset_url')))
+
+            lowest_picture_bottom_line = None
+            if len(picture_bottom_lines) > 0:
+                lowest_picture_bottom_line = max(picture_bottom_lines)
+
             if 'global_object_id' in slide['left']:
                 insert_info(ppt_slide.placeholders[sl_info['text_left']],
                             ppt_slide.shapes,
-                            slide['left']['global_object_id'])
-
-                insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
-                               ppt_slide.shapes,
-                               get_json_value(slide['left'], 'asset_id'),
-                               get_json_value(slide['left'], 'asset_url'))
+                            slide['left']['global_object_id'],
+                            lowest_picture_bottom_line)
 
             if 'global_object_id' in slide['right']:
                 insert_info(ppt_slide.placeholders[sl_info['text_right']],
                             ppt_slide.shapes,
-                            slide['right']['global_object_id'])
-
-                insert_picture(ppt_slide.placeholders[sl_info['picture_right']],
-                               ppt_slide.shapes,
-                               get_json_value(slide['right'], 'asset_id'),
-                               get_json_value(slide['right'], 'asset_url'))
+                            slide['right']['global_object_id'],
+                            lowest_picture_bottom_line)
 
     pack_dir = easydb_context.get_temp_dir()
     pptx_filename = '%s/produce.pptx' % pack_dir

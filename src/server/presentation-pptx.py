@@ -1,16 +1,11 @@
-import subprocess
 import os
-import json
-import getpass
-import re
-import glob
-import zipfile
-import shutil
-import pprint
 import hashlib
 import urllib
+
 from pptx import Presentation
-from pptx.util import Inches
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+
 from PIL import Image
 from context import get_json_value
 
@@ -23,87 +18,106 @@ def easydb_server_start(easydb_context):
         'callback': 'produce_files',
     })
 
-def produce_files(easydb_context, parameters, protocol = None):
+
+def produce_files(easydb_context, parameters, protocol=None):
     global pack_dir
 
     exp = easydb_context.get_exporter()
-    produce_opts = exp.getExport()["export"]["produce_options"]
+    produce_opts = exp.getExport()['export']['produce_options']
     logger = easydb_context.get_logger('export.pptx')
 
-    if "pptx" not in produce_opts:
+    if 'pptx' not in produce_opts:
         return
 
     logger.debug('parameters: %s' % parameters)
 
-    logger.debug("exp: %s" % exp)
+    logger.debug('exp: %s' % exp)
     if not exp:
-        logger.error("could not get exporter object")
+        logger.error('could not get exporter object')
         return
 
-    for plugin in easydb_context.get_plugins()["plugins"]:
-        if plugin["name"] == "presentation-pptx":
+    for plugin in easydb_context.get_plugins()['plugins']:
+        if plugin['name'] == 'presentation-pptx':
             break
-
-    # logger.debug("----%s-----" % plugin["name"])
-    # logger.debug(json.dumps(plugin, indent = 2))
-    # logger.debug("------")
-    # logger.debug("%s" % json.dumps(produce_opts, indent = 2))
-    # logger.debug("------")
-    # logger.debug("%s" % json.dumps(exp.getFiles(), indent = 2))
-
-    # print "%s" % json.dumps(exp.getFiles(), indent = 2)
 
     # produce slides
 
     basepath = os.path.abspath(os.path.dirname(__file__))
-    show_info = produce_opts["presentation"]["settings"]["show_info"] == "standard-info"
 
-    prs = Presentation(basepath+"/"+produce_opts["pptx_form"]["template"]["name"])
+    standard_format = {
+        '1': {
+            'size': 30,
+            'bold': True
+        },
+        '2': {
+            'size': 24,
+            'bold': False
+        },
+        '3': {
+            'size': 20,
+            'bold': False
+        }
+    }
+
+    show_standard = []
+    if 'show_standard' in produce_opts['presentation']['settings']:
+        show_standard = [s.strip() for s in produce_opts['presentation']['settings']['show_standard'].split(' ')]
+
+    prs = Presentation('%s/%s' % (basepath, produce_opts['pptx_form']['template']['name']))
 
     slide_layouts = {}
 
-    for slide in produce_opts["pptx_form"]["template"]["slides"]:
-        if show_info:
-            if "show_info" in slide and slide["show_info"] == True:
-                slide_layouts[slide["type"]] = {
-                    "layout": prs.slide_layouts[slide["slide_idx"]],
-                    "info": slide,
-                    }
+    for slide in produce_opts['pptx_form']['template']['slides']:
+        if len(show_standard) > 0:
+            if 'show_info' in slide and slide['show_info'] == True:
+                slide_layouts[slide['type']] = {
+                    'layout': prs.slide_layouts[slide['slide_idx']],
+                    'info': slide,
+                }
         else:
-            if "show_info" not in slide or slide["show_info"] == False:
-                slide_layouts[slide["type"]] = {
-                    "layout": prs.slide_layouts[slide["slide_idx"]],
-                    "info": slide,
-                    }
+            if 'show_info' not in slide or slide['show_info'] == False:
+                slide_layouts[slide['type']] = {
+                    'layout': prs.slide_layouts[slide['slide_idx']],
+                    'info': slide,
+                }
 
-    data_by_gid = produce_opts["presentation"]["data_by_gid"]
+    data_by_gid = produce_opts['presentation']['data_by_gid']
 
-    def add_info_to_slide(ppt_slide, gid):
-        if not show_info:
-            return
-
+    def insert_info(placeholder, shapes, gid):
         if gid not in data_by_gid:
             return
 
-        if "1" in data_by_gid[gid]["standard_info"]:
-            standard = data_by_gid[gid]["standard_info"]["1"]
-            txBox = ppt_slide.shapes.add_textbox(left, top, width, height)
-            txBox.text_frame.text = standard
-            # print "  standard", standard
+        text_box = shapes.add_textbox(placeholder.left, placeholder.top, placeholder.width, placeholder.height)
 
-    def insert_info(placeholder, gid):
-        if gid not in data_by_gid:
-            return
+        first_standard_value = True
+        for s in show_standard:
+            if not s in standard_format:
+                continue
 
-        if "1" in data_by_gid[gid]["standard_info"]:
-            standard = data_by_gid[gid]["standard_info"]["1"]
-            placeholder.text_frame.text = standard
-            # print "  standard", standard
+            if s in data_by_gid[gid]['standard_info']:
+                _s = data_by_gid[gid]['standard_info'][s].strip()
+                if len(_s) < 1:
+                    continue
 
-    def insert_picture(placeholder, shapes, eas_id, asset_url = None):
+                if first_standard_value:
+                    first_standard_value = False
+                    p = text_box.text_frame.paragraphs[0]
+                else:
+                    p = text_box.text_frame.add_paragraph()
+
+                p.text = _s
+                p.alignment = PP_ALIGN.CENTER
+                p.font.name = 'FreeSans'
+                p.font.size = Pt(standard_format[s]['size'])
+                p.font.bold = standard_format[s]['bold']
+
+        # remove the original placeholder since it is not needed
+        placeholder._element.getparent().remove(placeholder._element)
+
+    def insert_picture(placeholder, shapes, eas_id, asset_url=None):
 
         if eas_id is None and asset_url is None:
-            logger.warn("no asset id or asset url is given for insert_picture")
+            logger.warn('no asset id or asset url is given for insert_picture')
             return
 
         filename = None
@@ -113,38 +127,38 @@ def produce_files(easydb_context, parameters, protocol = None):
             try:
                 # download the image file, save it in the export asset folder
                 m = hashlib.sha1(asset_url)
-                filename = exp.getFilesPath() + "/" + str(m.hexdigest())
+                filename = '%s/%s' % (exp.getFilesPath(), str(m.hexdigest()))
 
                 url_parts = asset_url.split('/')
                 if len(url_parts) > 1:
-                    filename += "." + url_parts[-1]
+                    filename += '.%s' % url_parts[-1]
 
                 urllib.urlretrieve(asset_url, filename)
                 use_connector_url = True
             except Exception as e:
-                logger.warn("could not download connector image: " + str(e))
+                logger.warn('could not download connector image: %s' % str(e))
                 return
         else:
-            for _file in  exp.getFiles():
-                if _file["eas_id"] == eas_id:
-                    filename = exp.getFilesPath() + "/" + _file["path"]
+            for _file in exp.getFiles():
+                if _file['eas_id'] == eas_id:
+                    filename = '%s/%s' % (exp.getFilesPath(), _file['path'])
                     break
 
         if filename is None:
-            logger.debug("no asset file name could be found in insert_picture")
+            logger.debug('no asset file name could be found in insert_picture')
             return
 
         try:
             if use_connector_url:
-                logger.debug("load connector image " + filename)
+                logger.debug('load connector image %s' % filename)
             else:
-                logger.debug("load exported image from local instance " + filename)
+                logger.debug('load exported image from local instance %s' % filename)
             img = Image.open(filename)
         except Exception as e:
             if use_connector_url:
-                logger.warn("could not load connector image: " + str(e))
+                logger.warn('could not load connector image: %s' % str(e))
             else:
-                logger.warn("could not load exported image from local instance slide: " + str(e))
+                logger.warn('could not load exported image from local instance slide: %s' % str(e))
             return
 
         try:
@@ -176,35 +190,34 @@ def produce_files(easydb_context, parameters, protocol = None):
                 new_w = int(iw_emu / w_ratio)
                 new_x = (pw_emu - new_w) / 2
 
-            shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height = new_h)
+            shapes.add_picture(filename, new_x + placeholder.left, new_y + placeholder.top, height=new_h)
 
             # remove the original placeholder since it is not needed
             placeholder._element.getparent().remove(placeholder._element)
         except Exception as e:
-            logger.warn("could not get image resolution / size information, will insert image " + filename + " into placeholder")
+            logger.warn('could not get image resolution / size information, will insert image %s into placeholder' % filename)
             placeholder.insert_picture(filename)
 
-    for slide in produce_opts["presentation"]["slides"]:
-        stype = slide["type"]
+    for slide in produce_opts['presentation']['slides']:
+        stype = slide['type']
 
         sl = slide_layouts[stype]
-        sl_info = sl["info"]
+        sl_info = sl['info']
 
-        # print "adding slide", stype, repr(sl_info), repr(slide)
-        ppt_slide = prs.slides.add_slide(sl["layout"])
+        print 'adding slide', stype, repr(sl_info), repr(slide)
+        ppt_slide = prs.slides.add_slide(sl['layout'])
 
-        if stype == "start":
-            title = ppt_slide.placeholders[sl_info["title"]].text = slide["data"]["title"]
-            subtitle = ppt_slide.placeholders[sl_info["subtitle"]].text = slide["data"]["info"]
+        if stype == 'start':
+            ppt_slide.placeholders[sl_info['title']].text = slide['data']['title']
+            ppt_slide.placeholders[sl_info['subtitle']].text = slide['data']['info']
 
-        if stype == "bullets":
-            title = ppt_slide.placeholders[sl_info["title"]].text = slide["data"]["title"]
-            # bullets = ppt_slide.placeholders[sl_info["bullets"]].text = slide["data"]["info"]
+        if stype == 'bullets':
+            ppt_slide.placeholders[sl_info['title']].text = slide['data']['title']
 
-            text_frame = ppt_slide.placeholders[sl_info["bullets"]].text_frame
+            text_frame = ppt_slide.placeholders[sl_info['bullets']].text_frame
             text_frame.clear()  # remove any existing paragraphs, leaving one empty one
 
-            rows = slide["data"]["info"].split("\n")
+            rows = slide['data']['info'].split('\n')
 
             p = text_frame.paragraphs[0]
             p.text = rows[0]
@@ -213,39 +226,42 @@ def produce_files(easydb_context, parameters, protocol = None):
                 p = text_frame.add_paragraph()
                 p.text = row
 
-        if stype == "one":
-            if "global_object_id" in slide["center"]:
-                if show_info:
-                    insert_info(ppt_slide.placeholders[sl_info["text"]],
-                                slide["center"]["global_object_id"])
-                insert_picture(ppt_slide.placeholders[sl_info["picture"]],
-                               ppt_slide.shapes,
-                               get_json_value(slide["center"], "asset_id"),
-                               get_json_value(slide["center"], "asset_url"))
+        if stype == 'one':
+            if 'global_object_id' in slide['center']:
 
-        if stype == "duo":
-            if "global_object_id" in slide["left"]:
-                if show_info:
-                    insert_info(ppt_slide.placeholders[sl_info["text_left"]],
-                                slide["left"]["global_object_id"])
-                insert_picture(ppt_slide.placeholders[sl_info["picture_left"]],
-                               ppt_slide.shapes,
-                               get_json_value(slide["left"], "asset_id"),
-                               get_json_value(slide["left"], "asset_url"))
+                insert_info(ppt_slide.placeholders[sl_info['text']],
+                            ppt_slide.shapes,
+                            slide['center']['global_object_id'])
 
-            if "global_object_id" in slide["right"]:
-                if show_info:
-                    insert_info(ppt_slide.placeholders[sl_info["text_right"]],
-                                slide["right"]["global_object_id"])
-                insert_picture(ppt_slide.placeholders[sl_info["picture_right"]],
+                insert_picture(ppt_slide.placeholders[sl_info['picture']],
                                ppt_slide.shapes,
-                               get_json_value(slide["right"], "asset_id"),
-                               get_json_value(slide["right"], "asset_url"))
+                               get_json_value(slide['center'], 'asset_id'),
+                               get_json_value(slide['center'], 'asset_url'))
 
+        if stype == 'duo':
+            if 'global_object_id' in slide['left']:
+                insert_info(ppt_slide.placeholders[sl_info['text_left']],
+                            ppt_slide.shapes,
+                            slide['left']['global_object_id'])
+
+                insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
+                               ppt_slide.shapes,
+                               get_json_value(slide['left'], 'asset_id'),
+                               get_json_value(slide['left'], 'asset_url'))
+
+            if 'global_object_id' in slide['right']:
+                insert_info(ppt_slide.placeholders[sl_info['text_right']],
+                            ppt_slide.shapes,
+                            slide['right']['global_object_id'])
+
+                insert_picture(ppt_slide.placeholders[sl_info['picture_right']],
+                               ppt_slide.shapes,
+                               get_json_value(slide['right'], 'asset_id'),
+                               get_json_value(slide['right'], 'asset_url'))
 
     pack_dir = easydb_context.get_temp_dir()
-    pptx_filename = pack_dir+"/produce.pptx"
-    target_filename = produce_opts["presentation"]["filename"]+".pptx"
+    pptx_filename = '%s/produce.pptx' % pack_dir
+    target_filename = '%s.pptx' % produce_opts['presentation']['filename']
 
     prs.save(pptx_filename)
     exp.addFile(pptx_filename, target_filename)

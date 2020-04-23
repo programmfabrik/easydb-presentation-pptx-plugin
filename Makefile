@@ -21,7 +21,7 @@ COFFEE_FILES = src/webfrontend/PresentationPowerpointDownloadManager.coffee
 
 all: build
 
-include ../../library/tools/base-plugins.make
+include ../easydb-library/tools/base-plugins.make
 
 build: code
 

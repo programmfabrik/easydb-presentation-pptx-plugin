@@ -21,6 +21,8 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			# only first asset per object
 			return
 
+		console.debug "quality", @pptx_form
+
 		version = Asset.getBestImageForViewport(asset, @pptx_form.quality, @pptx_form.quality)
 		if not version
 			[]
@@ -41,7 +43,12 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		data
 
 	getContent: ->
-		pptx_config = ez5.pluginManager.getPlugin("presentation-pptx").getOpts()
+		pptx_config = ez5.pluginManager.getPlugin("presentation-pptx").getOpts() or {}
+
+		# Avoid JS errors if no configuration could be found
+		if not pptx_config["python-pptx"]
+			pptx_config["python-pptx"] = {}
+
 		# console.debug @__cls, "getContent", pptx_config
 
 		@pptx_form = {}

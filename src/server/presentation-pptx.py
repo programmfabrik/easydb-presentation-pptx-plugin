@@ -213,24 +213,33 @@ def produce_files(easydb_context, parameters, protocol=None):
 
         return picture_bottom_line
 
+    slide_id = -1
     for slide in produce_opts['presentation']['slides']:
+        slide_id += 1
+
         stype = slide['type']
 
         sl = slide_layouts[stype]
         sl_info = sl['info']
 
-        print 'adding slide', stype, repr(sl_info), repr(slide)
+        logger.debug('adding slide[%d], type: %s | %s | %s' % (slide_id, stype, repr(sl_info), repr(slide)))
         ppt_slide = prs.slides.add_slide(sl['layout'])
 
         if stype == 'start':
+            if not 'data' in slide:
+                logger.warn('key data missing in slide[%d] in produce_opts' % slide_id)
+                continue
             ppt_slide.placeholders[sl_info['title']
                                    ].text = slide['data']['title']
             ppt_slide.placeholders[sl_info['subtitle']
                                    ].text = slide['data']['info']
 
-        if stype == 'bullets':
-            ppt_slide.placeholders[sl_info['title']
-                                   ].text = slide['data']['title']
+        elif stype == 'bullets':
+            if not 'data' in slide:
+                logger.warn('key data missing in slide[%d] in produce_opts' % slide_id)
+                continue
+
+            ppt_slide.placeholders[sl_info['title']].text = slide['data']['title']
 
             text_frame = ppt_slide.placeholders[sl_info['bullets']].text_frame
             text_frame.clear()  # remove any existing paragraphs, leaving one empty one
@@ -244,52 +253,69 @@ def produce_files(easydb_context, parameters, protocol=None):
                 p = text_frame.add_paragraph()
                 p.text = row
 
-        if stype == 'one':
-            if 'global_object_id' in slide['center']:
+        elif stype == 'one':
+            if not 'center' in slide:
+                logger.warn('key center missing in slide[%d] in produce_opts' % slide_id)
+                continue
 
-                picture_bottom_line = insert_picture(ppt_slide.placeholders[sl_info['picture']],
-                                                     ppt_slide.shapes,
-                                                     get_json_value(
-                                                         slide['center'], 'asset_id'),
-                                                     get_json_value(slide['center'], 'asset_url'))
+            if not 'global_object_id' in slide['center']:
+                logger.warn('key global_object_id missing in slide[%d].center in produce_opts' % slide_id)
+                continue
 
-                insert_info(ppt_slide.placeholders[sl_info['text']],
-                            ppt_slide.shapes,
-                            slide['center']['global_object_id'],
-                            picture_bottom_line)
+            picture_bottom_line = insert_picture(ppt_slide.placeholders[sl_info['picture']],
+                                                 ppt_slide.shapes,
+                                                 get_json_value(
+                                                     slide['center'], 'asset_id'),
+                                                 get_json_value(slide['center'], 'asset_url'))
 
-        if stype == 'duo':
+            insert_info(ppt_slide.placeholders[sl_info['text']],
+                        ppt_slide.shapes,
+                        slide['center']['global_object_id'],
+                        picture_bottom_line)
+
+        elif stype == 'duo':
             picture_bottom_lines = []
 
-            if 'global_object_id' in slide['left']:
-                picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
-                                                           ppt_slide.shapes,
-                                                           get_json_value(
-                                                               slide['left'], 'asset_id'),
-                                                           get_json_value(slide['left'], 'asset_url')))
+            if not 'left' in slide and not 'right' in slide:
+                logger.warn('keys left and right missing in slide[%d] in produce_opts' % slide_id)
+                continue
 
-            if 'global_object_id' in slide['right']:
-                picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_right']],
-                                                           ppt_slide.shapes,
-                                                           get_json_value(
-                                                               slide['right'], 'asset_id'),
-                                                           get_json_value(slide['right'], 'asset_url')))
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
+                    picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
+                                                               ppt_slide.shapes,
+                                                               get_json_value(
+                                                                   slide['left'], 'asset_id'),
+                                                               get_json_value(slide['left'], 'asset_url')))
+
+            if 'right' in slide:
+                if 'global_object_id' in slide['right'] and 'picture_right' in sl_info:
+                    picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_right']],
+                                                               ppt_slide.shapes,
+                                                               get_json_value(
+                                                                   slide['right'], 'asset_id'),
+                                                               get_json_value(slide['right'], 'asset_url')))
 
             lowest_picture_bottom_line = None
             if len(picture_bottom_lines) > 0:
                 lowest_picture_bottom_line = max(picture_bottom_lines)
 
-            if 'global_object_id' in slide['left']:
-                insert_info(ppt_slide.placeholders[sl_info['text_left']],
-                            ppt_slide.shapes,
-                            slide['left']['global_object_id'],
-                            lowest_picture_bottom_line)
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'text_left' in sl_info:
+                    insert_info(ppt_slide.placeholders[sl_info['text_left']],
+                                ppt_slide.shapes,
+                                slide['left']['global_object_id'],
+                                lowest_picture_bottom_line)
 
-            if 'global_object_id' in slide['right']:
-                insert_info(ppt_slide.placeholders[sl_info['text_right']],
-                            ppt_slide.shapes,
-                            slide['right']['global_object_id'],
-                            lowest_picture_bottom_line)
+            if 'right' in slide:
+                if 'global_object_id' in slide['right'] and 'text_right' in sl_info:
+                    insert_info(ppt_slide.placeholders[sl_info['text_right']],
+                                ppt_slide.shapes,
+                                slide['right']['global_object_id'],
+                                lowest_picture_bottom_line)
+
+        else:
+            logger.warn('unknown type %s in slide[%d] in produce_opts' % (stype, slide_id))
 
     pack_dir = easydb_context.get_temp_dir()
     pptx_filename = '%s/produce.pptx' % pack_dir

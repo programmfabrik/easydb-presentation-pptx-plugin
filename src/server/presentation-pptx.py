@@ -268,10 +268,11 @@ def produce_files(easydb_context, parameters, protocol=None):
                                                      slide['center'], 'asset_id'),
                                                  get_json_value(slide['center'], 'asset_url'))
 
-            insert_info(ppt_slide.placeholders[sl_info['text']],
-                        ppt_slide.shapes,
-                        slide['center']['global_object_id'],
-                        picture_bottom_line)
+            if 'text' in sl_info:
+                insert_info(ppt_slide.placeholders[sl_info['text']],
+                    ppt_slide.shapes,
+                    slide['center']['global_object_id'],
+                    picture_bottom_line)
 
         elif stype == 'duo':
             picture_bottom_lines = []

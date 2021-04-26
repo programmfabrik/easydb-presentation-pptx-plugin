@@ -8,6 +8,7 @@ from PIL import Image
 
 import hashlib
 import urllib
+import os
 
 
 def get_json_value(js, path, expected=False):
@@ -243,3 +244,9 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
         placeholder.insert_picture(filename)
 
     return picture_bottom_line
+
+
+def create_missing_dirs(f_path):
+    base_dir = '/'.join(f_path.split('/')[:-1])
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)

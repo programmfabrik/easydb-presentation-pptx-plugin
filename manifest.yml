@@ -99,3 +99,20 @@ plugin:
 
 python-2:
   file: src/server/presentation-pptx.py
+
+
+# callback registration in fylr
+callbacks:
+
+  export/create_pptx:
+    exec:
+      service: python
+      commands:
+        - prog: python
+          stdout:
+            type: body
+          args:
+            - type: value
+              value: src/server/presentation-pptx-fylr.py
+            - type: value
+              value: "%info.json%"

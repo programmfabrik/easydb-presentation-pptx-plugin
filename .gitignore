@@ -5,6 +5,7 @@
 *.pyc
 build
 build-stamp-*
+build-info.json
 *~
 .idea
 .\#*

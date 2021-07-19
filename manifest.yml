@@ -1,5 +1,6 @@
 plugin:
-  name: presentation-pptx
+  name: easydb-presentation-pptx-plugin
+  url: https://github.com/programmfabrik/easydb-presentation-pptx-plugin
   version: 1.0
   vendor: Programmfabrik GmbH
   server:

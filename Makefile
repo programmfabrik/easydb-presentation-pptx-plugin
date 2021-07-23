@@ -1,4 +1,5 @@
 PLUGIN_NAME = presentation-pptx
+PLUGIN_PATH = easydb-presentation-pptx-plugin
 INSTALL_FILES = \
 	$(WEB)/l10n/cultures.json \
 	$(WEB)/l10n/de-DE.json \

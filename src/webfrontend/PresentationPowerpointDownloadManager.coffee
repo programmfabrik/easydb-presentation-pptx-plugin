@@ -41,7 +41,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		data
 
 	getContent: ->
-		pptx_config = ez5.pluginManager.getPlugin("presentation-pptx").getOpts()
+		pptx_config = ez5.pluginManager.getPlugin("easydb-presentation-pptx-plugin").getOpts()
 		# console.debug @__cls, "getContent", pptx_config
 
 		@pptx_form = {}

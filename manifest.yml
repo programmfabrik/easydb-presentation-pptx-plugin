@@ -8,8 +8,8 @@ plugin:
   webfrontend:
     url: PresentationPowerpoint.js
     l10n: l10n/
-  # list of files, needed by python-pptx
-  python-pptx:
+  custom:
+    # list of files, needed by python-pptx
     templates:
       - name: default-white.pptx
         slides:
@@ -106,9 +106,9 @@ callbacks:
 
   export/create_pptx:
     exec:
-      service: python
+      service: python3
       commands:
-        - prog: python
+        - prog: python3
           stdout:
             type: body
           args:

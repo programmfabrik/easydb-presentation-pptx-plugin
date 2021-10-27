@@ -10,3 +10,4 @@ build-stamp-*
 .\#*
 .vscode/
 files/
+test/test.pptx

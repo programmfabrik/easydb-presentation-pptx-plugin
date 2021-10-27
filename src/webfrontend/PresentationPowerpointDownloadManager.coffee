@@ -36,20 +36,21 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 	getExportSaveData: ->
 		data = super()
 		data.export.produce_options.pptx_form = CUI.util.copyObject(@pptx_form, true)
+		data.export.produce_options.plugin = "presentation-pptx:create_pptx"
 		delete(data.export.produce_options.pptx_form._undo)
 		# console.debug "export save data:", CUI.util.dump(data)
 		data
 
 	getContent: ->
 		pptx_config = ez5.pluginManager.getPlugin("presentation-pptx").getOpts()
-		# console.debug @__cls, "getContent", pptx_config
+		# console.debug @__cls, "getContent", custom
 
 		@pptx_form = {}
 
 		fields = []
 
 		template_opts = []
-		for tmpl in pptx_config["python-pptx"].templates or []
+		for tmpl in pptx_config["custom"].templates or []
 			if not @pptx_form.template
 				@pptx_form.template = tmpl
 
@@ -67,7 +68,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			radio: true
 
 		quality_opts = []
-		for quality in pptx_config["python-pptx"].qualities or []
+		for quality in pptx_config["custom"].qualities or []
 			if not @pptx_form.quality
 				@pptx_form.quality = parseInt(quality)
 

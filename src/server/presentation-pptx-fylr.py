@@ -53,12 +53,12 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
                 continue
 
             f_path = get_json(f, 'path', True)
-            eas_url = '%s/export/%s/file/%s' % (api_callback_url,
-                                                export_id, f_path)
+            eas_url = '%s/api/v1/export/%s/file/%s' % (
+                api_callback_url, export_id, f_path)
 
             resp = requests.get(eas_url,
                                 headers={
-                                    'token': api_callback_token
+                                    'x-easydb-token': api_callback_token
                                 })
 
             if resp.status_code == 200:
@@ -73,8 +73,7 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
             eas_files.append({
                 'eas_id': file_id,
                 'eas_url': eas_url,
-                'path': f_path,
-                'body': str(resp.content)
+                'path': f_path
             })
 
         return eas_files
@@ -121,12 +120,11 @@ if __name__ == '__main__':
                     export_files,
                     pptx_filename)
             except util.VerboseException as e:
-                # fatal(str(e))
-                raise e  # XXX
+                fatal(str(e))
 
             # write pptx content to stdout
             with open(pptx_filename, 'rb') as pptx_file:
-                sys.stdout.write(pptx_file.read())
+                sys.stdout.buffer.write(pptx_file.read())
 
         else:
             # hide all files that are not exported
@@ -151,5 +149,4 @@ if __name__ == '__main__':
             stdout(json.dumps(response, indent=4))
 
     except Exception as e:
-        # fatal(str(e))
-        raise e  # XXX
+        fatal(str(e))

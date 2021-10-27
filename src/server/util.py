@@ -95,8 +95,6 @@ def parse_slide_layouts(prs, produce_opts, show_standard):
 
 def produce_files(produce_opts, files_path, export_files, pptx_filename):
 
-    print (json.dumps(export_files,indent=4))
-
     standard_format = get_standard_format()
     show_standard = parse_show_standard(produce_opts)
 
@@ -312,10 +310,9 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
                 filename = os.path.abspath(
                     '%s/%s' % (exp_files_path, _file['path']))
                 break
-
-    if filename is None:
-        raise VerboseException(
-            'no asset file name could be found in insert_picture')
+        if filename is None:
+            raise VerboseException(
+                'could not find asset with id %d in export files' % eas_id)
 
     try:
         img = Image.open(filename)

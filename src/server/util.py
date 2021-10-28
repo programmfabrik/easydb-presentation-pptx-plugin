@@ -9,16 +9,19 @@ from PIL import Image
 import hashlib
 import urllib
 import os
-import json
 
 
+# nothing special so far, might be extended if needed
 class VerboseException(Exception):
     def __init__(self, msg):
         Exception()
         self.msg = msg
 
-    def __str__(self):
+    def getMessage(self):
         return self.msg
+
+    def __str__(self):
+        return self.getMessage()
 
 
 def get_json_value(js, path, expected=False):
@@ -27,7 +30,7 @@ def get_json_value(js, path, expected=False):
     for path_part in path_parts:
         if not isinstance(current, dict) or path_part not in current:
             if expected:
-                raise Exception('expected: {0}'.format(path_part))
+                raise VerboseException('expected: {0}'.format(path_part))
             else:
                 return None
         current = current[path_part]

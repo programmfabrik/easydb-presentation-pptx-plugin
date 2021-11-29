@@ -34,6 +34,11 @@ PLUGIN_ACTION = 'produce?create_pptx'
 
 
 def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
+
+    if not isinstance(files, list):
+        # in case the objects that are exported have no asset fields, there is nothing to be done here
+        return []
+
     eas_files = []
 
     for f in files:
@@ -45,13 +50,10 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
                 continue
 
             f_path = util.get_json_value(f, 'path', True)
-            eas_url = '%s/api/v1/export/%s/file/%s' % (
-                api_callback_url, export_id, f_path)
+            eas_url = '%s/api/v1/export/%s/file/%s?access_token=%s' % (
+                api_callback_url, export_id, f_path, api_callback_token)
 
-            resp = requests.get(eas_url,
-                                headers={
-                                    'x-easydb-token': api_callback_token
-                                })
+            resp = requests.get(eas_url)
 
             if resp.status_code == 200:
                 util.create_missing_dirs(f_path)
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 
             # get files from eas and store locally
             export_files = load_files_from_eas(
-                util.get_json_value(response, '_files', True),
+                util.get_json_value(response, '_files'),
                 export_id,
                 api_callback_url,
                 api_callback_token)
@@ -117,7 +119,9 @@ if __name__ == '__main__':
 
         else:
             # hide all files that are not exported
-            for i in range(len(util.get_json_value(response, '_files', True))):
+            if not '_files' in response:
+                response['_files'] = []
+            for i in range(len(response['_files'])):
                 response['_files'][i]['export_file_internal']['hidden'] = True
 
             # add the file info and the plugin action for the pptx file to be created

@@ -5,9 +5,11 @@
 *.pyc
 build
 build-stamp-*
+build-info.json
 *~
 .idea
 .\#*
 .vscode/
 files/
 test/test.pptx
+**/__pycache__

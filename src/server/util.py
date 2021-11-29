@@ -188,27 +188,27 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
 
             if 'left' in slide:
                 if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
-                    picture_bottom_lines.append(
-                        insert_picture(
-                            files_path,
-                            export_files,
-                            ppt_slide.placeholders[sl_info['picture_left']],
-                            ppt_slide.shapes,
-                            get_json_value(
-                                slide, 'left.asset_id', True),
-                            get_json_value(slide, 'left.asset_url')))
+                    pbl = insert_picture(
+                        files_path,
+                        export_files,
+                        ppt_slide.placeholders[sl_info['picture_left']],
+                        ppt_slide.shapes,
+                        get_json_value(slide, 'left.asset_id', True),
+                        get_json_value(slide, 'left.asset_url'))
+                    if pbl is not None:
+                        picture_bottom_lines.append(pbl)
 
             if 'right' in slide:
                 if 'global_object_id' in slide['right'] and 'picture_right' in sl_info:
-                    picture_bottom_lines.append(
-                        insert_picture(
-                            files_path,
-                            export_files,
-                            ppt_slide.placeholders[sl_info['picture_right']],
-                            ppt_slide.shapes,
-                            get_json_value(
-                                slide, 'right.asset_id', True),
-                            get_json_value(slide, 'right.asset_url')))
+                    pbl = insert_picture(
+                        files_path,
+                        export_files,
+                        ppt_slide.placeholders[sl_info['picture_right']],
+                        ppt_slide.shapes,
+                        get_json_value(slide, 'right.asset_id', True),
+                        get_json_value(slide, 'right.asset_url'))
+                    if pbl is not None:
+                        picture_bottom_lines.append(pbl)
 
             lowest_picture_bottom_line = None
             if len(picture_bottom_lines) > 0:
@@ -283,11 +283,10 @@ def insert_info(placeholder, shapes, gid, data_by_gid, show_standard, standard_f
 
 def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset_url):
 
-    picture_bottom_line = None
-
     if eas_id is None and asset_url is None:
-        raise VerboseException(
-            'no asset id or asset url is given for insert_picture')
+        return None
+
+    picture_bottom_line = None
 
     filename = None
     use_connector_url = False
@@ -309,13 +308,16 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
                 'could not download connector image: %s' % str(e))
     else:
         for _file in exp_files:
-            if _file['eas_id'] == eas_id:
-                filename = os.path.abspath(
-                    '%s/%s' % (exp_files_path, _file['path']))
-                break
+            if not 'eas_id' in _file:
+                continue
+            if _file['eas_id'] != eas_id:
+                continue
+            filename = os.path.abspath(
+                '%s/%s' % (exp_files_path, _file['path']))
+            break
         if filename is None:
-            raise VerboseException(
-                'could not find asset with id %d in export files' % eas_id)
+            # no asset for this object
+            return picture_bottom_line
 
     try:
         img = Image.open(filename)

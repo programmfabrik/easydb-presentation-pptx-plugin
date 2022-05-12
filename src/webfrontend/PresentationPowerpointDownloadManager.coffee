@@ -9,6 +9,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 
 	getMenuButton: ->
 		loca_key: @loca_key("button.menu")
+		ui: "presentation.powerpoint.download.manager.button"
 		onClick: =>
 			@startExport()
 

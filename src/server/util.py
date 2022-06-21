@@ -6,6 +6,8 @@ from pptx.enum.text import PP_ALIGN
 
 from PIL import Image
 
+from fylr_lib_plugin_python3 import util as fylr_util
+
 import hashlib
 import urllib
 import os
@@ -22,19 +24,6 @@ class VerboseException(Exception):
 
     def __str__(self):
         return self.getMessage()
-
-
-def get_json_value(js, path, expected=False):
-    current = js
-    path_parts = path.split('.')
-    for path_part in path_parts:
-        if not isinstance(current, dict) or path_part not in current:
-            if expected:
-                raise VerboseException('expected: {0}'.format(path_part))
-            else:
-                return None
-        current = current[path_part]
-    return current
 
 
 def get_template_basepath():
@@ -103,14 +92,14 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
 
     prs = new_presentation(template_path='%s/%s' % (
         get_template_basepath(),
-        get_json_value(produce_opts, 'pptx_form.template.name', True)))
+        fylr_util.get_json_value(produce_opts, 'pptx_form.template.name', True)))
 
     slide_layouts = parse_slide_layouts(prs, produce_opts, show_standard)
-    data_by_gid = get_json_value(
+    data_by_gid = fylr_util.get_json_value(
         produce_opts, 'presentation.data_by_gid', True)
 
     slide_id = -1
-    for slide in get_json_value(produce_opts, 'presentation.slides', True):
+    for slide in fylr_util.get_json_value(produce_opts, 'presentation.slides', True):
         slide_id += 1
 
         stype = slide['type']
@@ -120,11 +109,11 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
 
         ppt_slide = prs.slides.add_slide(sl['layout'])
 
-        title_key = get_json_value(sl_info, 'title')
-        subtitle_key = get_json_value(sl_info, 'subtitle')
+        title_key = fylr_util.get_json_value(sl_info, 'title')
+        subtitle_key = fylr_util.get_json_value(sl_info, 'subtitle')
 
-        data_title = get_json_value(slide, 'data.title')
-        data_info = get_json_value(slide, 'data.info')
+        data_title = fylr_util.get_json_value(slide, 'data.title')
+        data_info = fylr_util.get_json_value(slide, 'data.info')
 
         if stype == 'start':
             if not 'data' in slide:
@@ -166,9 +155,9 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                 export_files,
                 ppt_slide.placeholders[sl_info['picture']],
                 ppt_slide.shapes,
-                get_json_value(
+                fylr_util.get_json_value(
                     slide, 'center.asset_id', True),
-                get_json_value(slide, 'center.asset_url'))
+                fylr_util.get_json_value(slide, 'center.asset_url'))
 
             if 'text' in sl_info:
                 insert_info(
@@ -193,8 +182,8 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_left']],
                         ppt_slide.shapes,
-                        get_json_value(slide, 'left.asset_id', True),
-                        get_json_value(slide, 'left.asset_url'))
+                        fylr_util.get_json_value(slide, 'left.asset_id', True),
+                        fylr_util.get_json_value(slide, 'left.asset_url'))
                     if pbl is not None:
                         picture_bottom_lines.append(pbl)
 
@@ -205,8 +194,9 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_right']],
                         ppt_slide.shapes,
-                        get_json_value(slide, 'right.asset_id', True),
-                        get_json_value(slide, 'right.asset_url'))
+                        fylr_util.get_json_value(
+                            slide, 'right.asset_id', True),
+                        fylr_util.get_json_value(slide, 'right.asset_url'))
                     if pbl is not None:
                         picture_bottom_lines.append(pbl)
 
@@ -219,7 +209,7 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                     insert_info(
                         ppt_slide.placeholders[sl_info['text_left']],
                         ppt_slide.shapes,
-                        get_json_value(
+                        fylr_util.get_json_value(
                             slide, 'left.global_object_id', True),
                         data_by_gid,
                         show_standard,
@@ -231,7 +221,7 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                     insert_info(
                         ppt_slide.placeholders[sl_info['text_right']],
                         ppt_slide.shapes,
-                        get_json_value(
+                        fylr_util.get_json_value(
                             slide, 'right.global_object_id', True),
                         data_by_gid,
                         show_standard,

@@ -5,9 +5,9 @@ plugin:
   server:
     api-version:
       require: 1
+  l10n: l10n/PresentationPowerpoint.csv
   webfrontend:
     url: PresentationPowerpoint.js
-    l10n: l10n/
   custom:
     # list of files, needed by python-pptx
     templates:
@@ -96,23 +96,21 @@ plugin:
       - 1024
       - 640
 
-
-python-2:
-  file: src/server/presentation-pptx.py
+base_url_prefix: webfrontend
 
 
 # callback registration in fylr
 callbacks:
-
-  export/create_pptx:
-    exec:
-      service: python3
-      commands:
-        - prog: python3
-          stdout:
-            type: body
-          args:
-            - type: value
-              value: src/server/presentation-pptx-fylr.py
-            - type: value
-              value: "%info.json%"
+  export:
+    create_pptx:
+      exec:
+        service: python3
+        commands:
+          - prog: python3
+            stdout:
+              type: body
+            args:
+              - type: value
+                value: "%_exec.pluginDir%/server/presentation-pptx-fylr.py"
+              - type: value
+                value: "%info.json%"

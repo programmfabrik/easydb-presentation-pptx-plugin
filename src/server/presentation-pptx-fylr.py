@@ -1,32 +1,13 @@
 # encoding: utf-8
 
-import os
 import sys
 import json
+from urllib import response
 import requests
 
 import util
 
-
-def stdout(line):
-    sys.stdout.write(line)
-    sys.stdout.write('\n')
-
-
-def stderr(line):
-    sys.stderr.write(line)
-    sys.stderr.write('\n')
-
-
-def return_response(response, status='done'):
-    response['_state'] = status
-    stdout(json.dumps(response))
-    exit(0)
-
-
-def return_error_response(error):
-    stderr(error)
-    exit(1)
+from fylr_lib_plugin_python3 import util as fylr_util
 
 
 PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
@@ -45,11 +26,12 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
 
         try:
 
-            file_id = util.get_json_value(f, 'export_file_internal.file_id')
+            file_id = fylr_util.get_json_value(
+                f, 'export_file_internal.file_id')
             if file_id is None:
                 continue
 
-            f_path = util.get_json_value(f, 'path', True)
+            f_path = fylr_util.get_json_value(f, 'path', True)
             eas_url = '%s/api/v1/export/%s/file/%s?access_token=%s' % (
                 api_callback_url, export_id, f_path, api_callback_token)
 
@@ -82,28 +64,27 @@ if __name__ == '__main__':
     try:
         # read from %info.json% (needs to be given as the first argument)
         info_json = json.loads(sys.argv[1])
-        response = util.get_json_value(info_json, 'export', True)
 
-        export_def = util.get_json_value(response, 'export', True)
-        export_id = util.get_json_value(export_def, '_id', True)
+        export_def = fylr_util.get_json_value(info_json, 'export.export', True)
+        export_id = fylr_util.get_json_value(export_def, '_id', True)
 
-        produce_opts = util.get_json_value(export_def, 'produce_options', True)
+        produce_opts = fylr_util.get_json_value(
+            export_def, 'produce_options', True)
 
         pptx_filename = 'files/%s' % (util.parse_target_filename(produce_opts))
 
-        plugin_action = util.get_json_value(info_json, 'plugin_action')
+        plugin_action = fylr_util.get_json_value(info_json, 'plugin_action')
         if plugin_action == PLUGIN_ACTION:
-            api_callback_url = util.get_json_value(
+            api_callback_url = fylr_util.get_json_value(
                 info_json, 'api_callback.url', True)
-            api_callback_token = util.get_json_value(
+            api_callback_token = fylr_util.get_json_value(
                 info_json, 'api_callback.token', True)
 
             # get files from eas and store locally
-            export_files = load_files_from_eas(
-                util.get_json_value(response, '_files'),
-                export_id,
-                api_callback_url,
-                api_callback_token)
+            export_files = load_files_from_eas(fylr_util.get_json_value(info_json, 'export._files'),
+                                               export_id,
+                                               api_callback_url,
+                                               api_callback_token)
 
             # create the pptx file, save as temporary file
             util.produce_files(
@@ -118,6 +99,11 @@ if __name__ == '__main__':
                 exit(0)
 
         else:
+            response = fylr_util.get_json_value(info_json, 'export', True)
+
+            if fylr_util.get_json_value(response, 'export.search') is None:
+                response['export']['search'] = {}
+
             # hide all files that are not exported
             if not '_files' in response:
                 response['_files'] = []
@@ -129,17 +115,21 @@ if __name__ == '__main__':
                 'path': pptx_filename,
                 'format': PPTX_MIME_TYPE,
                 'export_file_internal': {
-                    'export_id': export_id,
                     'path': pptx_filename,
-                    'format': PPTX_MIME_TYPE,
-                    'plugin_action': PLUGIN_ACTION
+                    'content_type': PPTX_MIME_TYPE,
+                    'plugin_action': PLUGIN_ACTION,
+                    'info': {},
                 }
             })
+            response['_plugin_log'] = [
+                'built pptx file: ' + pptx_filename
+            ]
+            response['_state'] = 'done'
 
             # everything ok, set status as done
-            return_response(response)
+            fylr_util.return_response(response)
 
     except util.VerboseException as e:
-        return_error_response(e.getMessage())
+        fylr_util.return_error_response(e.getMessage())
     except Exception as e:
-        return_error_response(str(e))
+        fylr_util.return_error_response(str(e))

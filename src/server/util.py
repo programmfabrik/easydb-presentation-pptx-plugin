@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import collections
+import collections.abc
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN

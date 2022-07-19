@@ -10,6 +10,8 @@ INSTALL_FILES = \
 	src/server/presentation-pptx.py \
 	src/server/default-black.pptx \
 	src/server/default-white.pptx \
+	src/server/default-black-4-3.pptx \
+	src/server/default-white-4-3.pptx \
 	manifest.yml
 
 L10N_FILES = l10n/PresentationPowerpoint.csv

@@ -1,6 +1,7 @@
 import os
 import hashlib
 import urllib
+import traceback
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -24,6 +25,13 @@ def pixels_to_emu(px, dpi=72):
 
 
 def produce_files(easydb_context, parameters, protocol=None):
+    try:
+        _produce_files(easydb_context, parameters, protocol)
+    except Exception as e:
+        traceback.print_exc()
+        raise e
+
+def _produce_files(easydb_context, parameters, protocol):
     global pack_dir
 
     exp = easydb_context.get_exporter()
@@ -298,6 +306,7 @@ def produce_files(easydb_context, parameters, protocol=None):
                                                                get_json_value(slide['right'], 'asset_url')))
 
             lowest_picture_bottom_line = None
+            picture_bottom_lines = list(filter(None, picture_bottom_lines))
             if len(picture_bottom_lines) > 0:
                 lowest_picture_bottom_line = max(picture_bottom_lines)
 

@@ -104,6 +104,17 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
     for slide in fylr_util.get_json_value(produce_opts, 'presentation.slides', True):
         slide_id += 1
 
+        fylr_util.write_tmp_file(
+            'pptx.json',
+            [
+                '',
+                '////////////////////////////////////////////////',
+                '',
+                '// slide #' + str(slide_id)
+            ],
+            skip_datetime=True
+        )
+
         stype = slide['type']
 
         sl = slide_layouts[stype]
@@ -275,6 +286,15 @@ def insert_info(placeholder, shapes, gid, data_by_gid, show_standard, standard_f
 
 def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset_url):
 
+    fylr_util.write_tmp_file(
+        'pptx.json',
+        [
+            '// eas_id: ' + str(eas_id),
+            '// asset_url: ' + str(asset_url),
+        ],
+        skip_datetime=True
+    )
+
     if eas_id is None and asset_url is None:
         return None
 
@@ -301,12 +321,36 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
     else:
         for _file in exp_files:
             if not 'eas_id' in _file:
+                fylr_util.write_tmp_file(
+                    'pptx.json',
+                    [
+                        '// \'eas_id\' is missing in _file'
+                    ],
+                    skip_datetime=True
+                )
                 continue
-            if _file['eas_id'] != eas_id:
+            if _file['eas_id'] != str(eas_id):
+                fylr_util.write_tmp_file(
+                    'pptx.json',
+                    [
+                        '// _file[\'eas_id\'] (' + _file['eas_id'] +
+                        ') != ' + str(eas_id)
+                    ],
+                    skip_datetime=True
+                )
                 continue
             filename = os.path.abspath(
                 '%s/%s' % (exp_files_path, _file['path']))
+            fylr_util.write_tmp_file(
+                'pptx.json',
+                [
+                    '// _file[\'eas_id\'] (' +
+                    _file['eas_id'] + ') => ' + filename
+                ],
+                skip_datetime=True
+            )
             break
+
         if filename is None:
             # no asset for this object
             return picture_bottom_line
@@ -314,12 +358,20 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
     try:
         img = Image.open(filename)
     except Exception as e:
-        if use_connector_url:
-            raise VerboseException(
-                'could not load connector image: %s' % str(e))
-        else:
-            raise VerboseException(
-                'could not load exported image from local instance slide: %s' % str(e))
+        fylr_util.write_tmp_file(
+            'pptx.json',
+            [
+                '// error:' + str(e)
+            ],
+            skip_datetime=True
+        )
+
+        # if use_connector_url:
+        #     raise VerboseException(
+        #         'could not load connector image: %s' % str(e))
+        # else:
+        #     raise VerboseException(
+        #         'could not load exported image from local instance slide: %s' % str(e))
 
     try:
         # get placeholder size in emus

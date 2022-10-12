@@ -20,7 +20,7 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
         # in case the objects that are exported have no asset fields, there is nothing to be done here
         return []
 
-    eas_files = []
+    eas_files_by_id = {}
 
     for f in files:
 
@@ -31,9 +31,17 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
             if file_id is None:
                 continue
 
+            try:
+                file_id = str(int(file_id))
+            except:
+                continue
+
             f_path = fylr_util.get_json_value(f, 'path', True)
             eas_url = '%s/api/v1/export/%s/file/%s?access_token=%s' % (
-                api_callback_url, export_id, f_path, api_callback_token)
+                api_callback_url,
+                export_id,
+                f_path,
+                api_callback_token)
 
             resp = requests.get(eas_url)
 
@@ -45,16 +53,43 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
                 raise util.VerboseException('could not get file from fylr: status code %s: %s' %
                                             (resp.status_code, resp.text))
 
-            eas_files.append({
+            eas_files_by_id[file_id] = {
                 'eas_id': file_id,
                 'eas_url': eas_url,
                 'path': f_path
-            })
+            }
 
         except Exception as e:
-            eas_files.append({
+            eas_files_by_id[file_id] = {
                 'error': str(e)
-            })
+            }
+
+    if len(eas_files_by_id) < 1:
+        return[]
+
+    # save the asset information for each eas id
+
+    # eas_url = '%s/api/v1/eas?ids=[%s]&access_token=%s' % (
+    #     api_callback_url,
+    #     ','.join(list(eas_files_by_id.keys())),
+    #     api_callback_token)
+
+    # resp = requests.get(eas_url)
+    # if resp.status_code == 200:
+    #     try:
+    #         content = json.loads(resp.text)
+    #         for eas_id in eas_files_by_id.keys():
+    #             if not eas_id in content:
+    #                 continue
+
+    #             eas_files_by_id[eas_id]['info'] = content[eas_id]
+
+    #     except Exception as e:
+    #         pass
+
+    eas_files = []
+    for f in eas_files_by_id:
+        eas_files.append(eas_files_by_id[f])
 
     return eas_files
 
@@ -86,6 +121,14 @@ if __name__ == '__main__':
                                                api_callback_url,
                                                api_callback_token)
 
+            fylr_util.write_tmp_file(
+                'pptx_2.json',
+                [
+                    '// info_json: ',
+                    fylr_util.dumpjs(info_json)
+                ],
+                new_file=True)
+
             # create the pptx file, save as temporary file
             util.produce_files(
                 produce_opts,
@@ -99,6 +142,15 @@ if __name__ == '__main__':
                 exit(0)
 
         else:
+
+            fylr_util.write_tmp_file(
+                'pptx_1.json',
+                [
+                    '// info_json: ',
+                    fylr_util.dumpjs(info_json)
+                ],
+                new_file=True)
+
             response = fylr_util.get_json_value(info_json, 'export', True)
 
             if fylr_util.get_json_value(response, 'export.search') is None:

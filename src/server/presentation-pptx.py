@@ -10,9 +10,11 @@ from pptx.enum.text import PP_ALIGN
 from PIL import Image
 from context import get_json_value
 
+LOGGER_NAME = 'pf.plugin.base.presentation-pptx'
+
 
 def easydb_server_start(easydb_context):
-    logger = easydb_context.get_logger('presentation-pptx')
+    logger = easydb_context.get_logger(LOGGER_NAME)
     logger.debug('PPTX started')
 
     easydb_context.register_callback('export_produce', {
@@ -31,19 +33,17 @@ def produce_files(easydb_context, parameters, protocol=None):
         traceback.print_exc()
         raise e
 
+
 def _produce_files(easydb_context, parameters, protocol):
     global pack_dir
 
     exp = easydb_context.get_exporter()
     produce_opts = exp.getExport()['export']['produce_options']
-    logger = easydb_context.get_logger('export.pptx')
+    logger = easydb_context.get_logger(LOGGER_NAME)
 
     if 'pptx' not in produce_opts:
         return
 
-    logger.debug('parameters: %s' % parameters)
-
-    logger.debug('exp: %s' % exp)
     if not exp:
         logger.error('could not get exporter object')
         return
@@ -128,6 +128,34 @@ def _produce_files(easydb_context, parameters, protocol):
                 p.font.name = 'Helvetica'
                 p.font.size = Pt(standard_format[s]['size'])
                 p.font.bold = standard_format[s]['bold']
+
+        # remove the original placeholder since it is not needed
+        placeholder._element.getparent().remove(placeholder._element)
+
+    def insert_text(placeholder, shapes, text):
+        if len(text) < 1:
+            return
+
+        text_box = shapes.add_textbox(placeholder.left, placeholder.top, placeholder.width, placeholder.height)
+        text_box.text_frame.word_wrap = True
+
+        first_line = True
+        for s in text.split('\n'):
+            s = s.strip()
+            if len(s) < 1:
+                continue
+
+            if first_line:
+                first_line = False
+                p = text_box.text_frame.paragraphs[0]
+            else:
+                p = text_box.text_frame.add_paragraph()
+
+            p.text = s
+            p.alignment = PP_ALIGN.LEFT
+            p.line_spacing = 1.1
+            p.font.name = 'Helvetica'
+            p.font.size = Pt(26)
 
         # remove the original placeholder since it is not needed
         placeholder._element.getparent().remove(placeholder._element)
@@ -226,6 +254,9 @@ def _produce_files(easydb_context, parameters, protocol):
         slide_id += 1
 
         stype = slide['type']
+        if stype not in slide_layouts:
+            logger.warn('skipping slide[%d], unknown type: %s' % (slide_id, stype))
+            continue
 
         sl = slide_layouts[stype]
         sl_info = sl['info']
@@ -278,9 +309,9 @@ def _produce_files(easydb_context, parameters, protocol):
 
             if 'text' in sl_info:
                 insert_info(ppt_slide.placeholders[sl_info['text']],
-                    ppt_slide.shapes,
-                    slide['center']['global_object_id'],
-                    picture_bottom_line)
+                            ppt_slide.shapes,
+                            slide['center']['global_object_id'],
+                            picture_bottom_line)
 
         elif stype == 'duo':
             picture_bottom_lines = []
@@ -323,6 +354,39 @@ def _produce_files(easydb_context, parameters, protocol):
                                 ppt_slide.shapes,
                                 slide['right']['global_object_id'],
                                 lowest_picture_bottom_line)
+
+        elif stype == 'imageText':
+            picture_bottom_lines = []
+
+            if not 'left' in slide and not 'data' in slide:
+                logger.warn('keys left and data missing in slide[%d] in produce_opts' % slide_id)
+                continue
+
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
+                    picture_bottom_lines.append(insert_picture(ppt_slide.placeholders[sl_info['picture_left']],
+                                                               ppt_slide.shapes,
+                                                               get_json_value(
+                                                                   slide['left'], 'asset_id'),
+                                                               get_json_value(slide['left'], 'asset_url')))
+
+            lowest_picture_bottom_line = None
+            picture_bottom_lines = list(filter(None, picture_bottom_lines))
+            if len(picture_bottom_lines) > 0:
+                lowest_picture_bottom_line = max(picture_bottom_lines)
+
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'text_left' in sl_info:
+                    insert_info(ppt_slide.placeholders[sl_info['text_left']],
+                                ppt_slide.shapes,
+                                slide['left']['global_object_id'],
+                                lowest_picture_bottom_line)
+
+            text = get_json_value(slide, 'data.text')
+            if isinstance(text, str) and 'text_right' in sl_info:
+                insert_text(ppt_slide.placeholders[sl_info['text_right']],
+                            ppt_slide.shapes,
+                            text)
 
         else:
             logger.warn('unknown type %s in slide[%d] in produce_opts' % (stype, slide_id))

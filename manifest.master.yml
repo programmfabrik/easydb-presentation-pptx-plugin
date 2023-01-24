@@ -11,7 +11,9 @@ plugin:
   custom:
     # list of files, needed by python-pptx
     templates:
+
       - name: default-white.pptx
+        # format: 16:9
         slides:
           - type: "start"
             slide_idx: 0
@@ -50,8 +52,20 @@ plugin:
             slide_idx: 5
             title: 0
             bullets: 18
+          - type: "imageText"
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+          - type: "imageText"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
 
       - name: default-black.pptx
+        # format: 16:9
         slides:
           - type: "start"
             slide_idx: 0
@@ -90,6 +104,121 @@ plugin:
             slide_idx: 5
             title: 0
             bullets: 18
+          - type: "imageText"
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+          - type: "imageText"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+
+      - name: default-white-4-3.pptx
+        # format: 4:3
+        slides:
+          - type: "start"
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "start"
+            show_info: true
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "one"
+            slide_idx: 1
+            picture: 13
+          - type: "one"
+            show_info: true
+            slide_idx: 2
+            picture: 13
+            text: 14
+          - type: "duo"
+            slide_idx: 3
+            picture_left: 13
+            picture_right: 14
+          - type: "duo"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            picture_right: 14
+            text_left: 18
+            text_right: 19
+          - type: "bullets"
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "bullets"
+            show_info: true
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "imageText"
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+          - type: "imageText"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+
+      - name: default-black-4-3.pptx
+        # format: 4:3
+        slides:
+          - type: "start"
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "start"
+            show_info: true
+            slide_idx: 0
+            title: 0
+            subtitle: 1
+          - type: "one"
+            slide_idx: 1
+            picture: 13
+          - type: "one"
+            show_info: true
+            slide_idx: 2
+            picture: 13
+            text: 14
+          - type: "duo"
+            slide_idx: 3
+            picture_left: 13
+            picture_right: 14
+          - type: "duo"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            picture_right: 14
+            text_left: 18
+            text_right: 19
+          - type: "bullets"
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "bullets"
+            show_info: true
+            slide_idx: 5
+            title: 0
+            bullets: 18
+          - type: "imageText"
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
+          - type: "imageText"
+            show_info: true
+            slide_idx: 4
+            picture_left: 13
+            text_left: 18
+            text_right: 14
 
     qualities:
       - 10000

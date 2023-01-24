@@ -207,8 +207,7 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_right']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(
-                            slide, 'right.asset_id', True),
+                        fylr_util.get_json_value(slide, 'right.asset_id', True),
                         fylr_util.get_json_value(slide, 'right.asset_url'))
                     if pbl is not None:
                         picture_bottom_lines.append(pbl)
@@ -234,12 +233,50 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
                     insert_info(
                         ppt_slide.placeholders[sl_info['text_right']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(
-                            slide, 'right.global_object_id', True),
+                        fylr_util.get_json_value(slide, 'right.global_object_id', True),
                         data_by_gid,
                         show_standard,
                         standard_format,
                         lowest_picture_bottom_line)
+
+        elif stype == 'imageText':
+            picture_bottom_lines = []
+
+            if not 'left' in slide and not 'data' in slide:
+                continue
+
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
+                    picture_bottom_lines.append(insert_picture(
+                        files_path,
+                        export_files,
+                        ppt_slide.placeholders[sl_info['picture_left']],
+                        ppt_slide.shapes,
+                        fylr_util.get_json_value(slide['left'], 'asset_id'),
+                        fylr_util.get_json_value(slide['left'], 'asset_url')))
+
+            lowest_picture_bottom_line = None
+            picture_bottom_lines = list(filter(None, picture_bottom_lines))
+            if len(picture_bottom_lines) > 0:
+                lowest_picture_bottom_line = max(picture_bottom_lines)
+
+            if 'left' in slide:
+                if 'global_object_id' in slide['left'] and 'text_left' in sl_info:
+                    insert_info(
+                        ppt_slide.placeholders[sl_info['text_left']],
+                        ppt_slide.shapes,
+                        fylr_util.get_json_value(slide, 'left.global_object_id', True),
+                        data_by_gid,
+                        show_standard,
+                        standard_format,
+                        lowest_picture_bottom_line)
+
+            text = fylr_util.get_json_value(slide, 'data.text')
+            if isinstance(text, str) and 'text_right' in sl_info:
+                insert_text(
+                    ppt_slide.placeholders[sl_info['text_right']],
+                    ppt_slide.shapes,
+                    text)
 
     create_missing_dirs(pptx_filename)
     prs.save(pptx_filename)
@@ -279,6 +316,35 @@ def insert_info(placeholder, shapes, gid, data_by_gid, show_standard, standard_f
             p.font.name = 'Helvetica'
             p.font.size = Pt(standard_format[s]['size'])
             p.font.bold = standard_format[s]['bold']
+
+    # remove the original placeholder since it is not needed
+    placeholder._element.getparent().remove(placeholder._element)
+
+
+def insert_text(placeholder, shapes, text):
+    if len(text) < 1:
+        return
+
+    text_box = shapes.add_textbox(placeholder.left, placeholder.top, placeholder.width, placeholder.height)
+    text_box.text_frame.word_wrap = True
+
+    first_line = True
+    for s in text.split('\n'):
+        s = s.strip()
+        if len(s) < 1:
+            continue
+
+        if first_line:
+            first_line = False
+            p = text_box.text_frame.paragraphs[0]
+        else:
+            p = text_box.text_frame.add_paragraph()
+
+        p.text = s
+        p.alignment = PP_ALIGN.LEFT
+        p.line_spacing = 1.1
+        p.font.name = 'Helvetica'
+        p.font.size = Pt(26)
 
     # remove the original placeholder since it is not needed
     placeholder._element.getparent().remove(placeholder._element)

@@ -50,7 +50,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		fields = []
 
 		template_opts = []
-		for tmpl in pptx_config["python-pptx"].templates or []
+		for tmpl in pptx_config["python-pptx"]?.templates or []
 			if not @pptx_form.template
 				@pptx_form.template = tmpl
 
@@ -68,7 +68,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			radio: true
 
 		quality_opts = []
-		for quality in pptx_config["python-pptx"].qualities or []
+		for quality in pptx_config["python-pptx"]?.qualities or []
 			if not @pptx_form.quality
 				@pptx_form.quality = parseInt(quality)
 

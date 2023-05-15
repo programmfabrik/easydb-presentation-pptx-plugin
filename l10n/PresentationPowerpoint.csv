@@ -1,15 +1,15 @@
-key,de-DE,en-US,da-DK,fi-FI,sv-SE,it-IT,es-ES,ru-RU,pl-PL,cs-CZ
-presentation.powerpoint.download.manager.button.menu|text,Powerpoint...,Powerpoint...,Powerpoint...,PowerPoint...,Powerpoint...,Powerpoint,Powerpoint,,,
-presentation.powerpoint.download.manager.dialog.title,Powerpoint Exporter,Powerpoint Exporter,Powerpoint Exporter,PowerPoint viejä,Powerpoint Exporter,,,,,
-presentation.powerpoint.download.manager.form.hint,In einer Powerpoint werden nur Bilder exportiert. Andere Formate werden mit einem Standbild exportiert.,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,PowerPointin vienti tukee vain kuvia. Muut muodot viedään pysäytyskuvina.,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,,,,,
-presentation.powerpoint.download.manager.form.label.quality,Qualität,Quality,Quality,Laatu,Quality,,,,,
-presentation.powerpoint.download.manager.form.label.template,Format,Format,Format,Muoto,Format,,,,,
-presentation.powerpoint.download.manager.form.quality.10000,Beste Qualität (Original),High Quality (Original),High Quality (Original),Korkea laatu (Originaali),High Quality (Original),,,,,
-presentation.powerpoint.download.manager.form.quality.1024,Mittel (1024px),Middle (1024px),Middle (1024px),Keski (1024px),Middle (1024px),,,,,
-presentation.powerpoint.download.manager.form.quality.640,Klein (640px),Low (540px),Low (540px),Matala (540px),Low (540px),,,,,
-presentation.powerpoint.download.manager.form.template.default-4-3.pptx,Standard 4:3,Standard 4:3,Standard 4:3,Oletus 4:3,Standard 4:3,Standard 4:3,Standard 4:3,,,
-presentation.powerpoint.download.manager.form.template.default-black-4-3.pptx,Schwarz 4:3,Black 4:3,Black 4:3,Musta 4:3,Black 4:3,,,,,
-presentation.powerpoint.download.manager.form.template.default-black.pptx,Schwarz 16:9,Black 16:9,Black 16:9,Musta 16:9,Black 16:9,,,,,
-presentation.powerpoint.download.manager.form.template.default-white-4-3.pptx,Weiß 4:3,White 4:3,White 4:3,Valkoinen 4:3,White 4:3,,,,,
-presentation.powerpoint.download.manager.form.template.default-white.pptx,Weiß 16:9,White 16:9,White 16:9,Valkoinen 16:9,White 16:9,,,,,
-presentation.powerpoint.download.manager.form.template.default.pptx,Standard 16:9,Standard 16:9,Standard 16:9,Oletus 16:9,Standard 16:9,Standard 16:9,Standard 16:9,,,
+key,de-DE,R,en-US,R,da-DK,R,fi-FI,R,sv-SE,R,fr-FR,R,it-IT,R,es-ES,R,cs-CZ,R,pl-PL,R,ru-RU,R
+presentation.powerpoint.download.manager.button.menu|text,Powerpoint...,FALSE,Powerpoint...,FALSE,Powerpoint...,FALSE,PowerPoint...,FALSE,Powerpoint...,FALSE,,FALSE,Powerpoint,FALSE,Powerpoint,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.dialog.title,Powerpoint Exporter,FALSE,Powerpoint Exporter,FALSE,Powerpoint Exporter,FALSE,PowerPoint viejä,FALSE,Powerpoint Exporter,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.hint,In einer Powerpoint werden nur Bilder exportiert. Andere Formate werden mit einem Standbild exportiert.,FALSE,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,FALSE,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,FALSE,PowerPointin vienti tukee vain kuvia. Muut muodot viedään pysäytyskuvina.,FALSE,The export for Powerpoint does only support pictures. Other formats will be exported as a still image.,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.label.quality,Qualität,FALSE,Quality,FALSE,Quality,FALSE,Laatu,FALSE,Quality,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.label.template,Format,FALSE,Format,FALSE,Format,FALSE,Muoto,FALSE,Format,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.quality.10000,Beste Qualität (Original),FALSE,High Quality (Original),FALSE,High Quality (Original),FALSE,Korkea laatu (Originaali),FALSE,High Quality (Original),FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.quality.1024,Mittel (1024px),FALSE,Middle (1024px),FALSE,Middle (1024px),FALSE,Keski (1024px),FALSE,Middle (1024px),FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.quality.640,Klein (640px),FALSE,Low (540px),FALSE,Low (540px),FALSE,Matala (540px),FALSE,Low (540px),FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default-4-3.pptx,Standard 4:3,FALSE,Standard 4:3,FALSE,Standard 4:3,FALSE,Oletus 4:3,FALSE,Standard 4:3,FALSE,,FALSE,Standard 4:3,FALSE,Standard 4:3,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default-black-4-3.pptx,Schwarz 4:3,FALSE,Black 4:3,FALSE,Black 4:3,FALSE,Musta 4:3,FALSE,Black 4:3,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default-black.pptx,Schwarz 16:9,FALSE,Black 16:9,FALSE,Black 16:9,FALSE,Musta 16:9,FALSE,Black 16:9,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default-white-4-3.pptx,Weiß 4:3,FALSE,White 4:3,FALSE,White 4:3,FALSE,Valkoinen 4:3,FALSE,White 4:3,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default-white.pptx,Weiß 16:9,FALSE,White 16:9,FALSE,White 16:9,FALSE,Valkoinen 16:9,FALSE,White 16:9,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE,,FALSE
+presentation.powerpoint.download.manager.form.template.default.pptx,Standard 16:9,FALSE,Standard 16:9,FALSE,Standard 16:9,FALSE,Oletus 16:9,FALSE,Standard 16:9,FALSE,,FALSE,Standard 16:9,FALSE,Standard 16:9,FALSE,,FALSE,,FALSE,,FALSE

@@ -18,11 +18,13 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 
 
 	getAssetVersionsToExport: (asset, gid) ->
+		console.debug asset
 		if @data_by_gid[gid]?asset_ids.length >= 1
 			# only first asset per object
 			return
 
 		version = Asset.getBestImageForViewport(asset, @pptx_form.quality, @pptx_form.quality)
+		console.debug version
 		if not version
 			[]
 		else
@@ -37,6 +39,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 	getExportSaveData: ->
 		data = super()
 		data.export.produce_options.pptx_form = CUI.util.copyObject(@pptx_form, true)
+		data.export.produce_options.plugin = "easydb-presentation-pptx-plugin:create_pptx"
 		delete(data.export.produce_options.pptx_form._undo)
 		# console.debug "export save data:", CUI.util.dump(data)
 		data
@@ -50,7 +53,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 		fields = []
 
 		template_opts = []
-		for tmpl in pptx_config["python-pptx"]?.templates or []
+		for tmpl in pptx_config["custom"]?.templates or []
 			if not @pptx_form.template
 				@pptx_form.template = tmpl
 
@@ -68,7 +71,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			radio: true
 
 		quality_opts = []
-		for quality in pptx_config["python-pptx"]?.qualities or []
+		for quality in pptx_config["custom"]?.qualities or []
 			if not @pptx_form.quality
 				@pptx_form.quality = parseInt(quality)
 

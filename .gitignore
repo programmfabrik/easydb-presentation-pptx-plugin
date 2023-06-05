@@ -1,6 +1,6 @@
 \#*\#
 */l10n/*json
-*.coffee.js
+*.js
 *.swp
 *.pyc
 build
@@ -10,4 +10,4 @@ build-info.json
 .idea
 .\#*
 .vscode/
-
+*.sh

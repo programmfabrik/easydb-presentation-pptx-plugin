@@ -30,7 +30,7 @@ class VerboseException(Exception):
 
 
 def get_template_basepath():
-    return '%s/../templates' % os.path.abspath(os.path.dirname(__file__))
+    return '{0}/../templates'.format(os.path.abspath(os.path.dirname(__file__)))
 
 
 def pixels_to_emu(px, dpi=72):
@@ -59,7 +59,7 @@ def get_standard_format():
 
 
 def parse_target_filename(produce_opts):
-    return '%s.pptx' % produce_opts['presentation']['filename']
+    return '{0}.pptx'.format(produce_opts['presentation']['filename'])
 
 
 def parse_show_standard(produce_opts):
@@ -93,7 +93,7 @@ def produce_files(produce_opts, files_path, export_files, pptx_filename):
     standard_format = get_standard_format()
     show_standard = parse_show_standard(produce_opts)
 
-    prs = new_presentation(template_path='%s/%s' % (
+    prs = new_presentation(template_path='{0}/{1}'.format(
         get_template_basepath(),
         fylr_util.get_json_value(produce_opts, 'pptx_form.template.name', True)))
 
@@ -342,14 +342,6 @@ def insert_text(placeholder, shapes, text):
 
 def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset_url):
 
-    fylr_util.write_tmp_file('pptx.json', [
-        "insert_picture",
-        exp_files_path,
-        eas_id,
-        asset_url,
-        fylr_util.dumpjs(exp_files)
-    ], new_file=True)
-
     if eas_id is None and asset_url is None:
         return None
 
@@ -362,52 +354,36 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
         try:
             # download the image file, save it in the export asset folder
             m = hashlib.sha1(asset_url)
-            filename = '%s/%s' % (exp_files_path, str(m.hexdigest()))
+            filename = '{0}/{1}'.format(exp_files_path, str(m.hexdigest()))
 
             url_parts = asset_url.split('/')
             if len(url_parts) > 1:
-                filename += '.%s' % url_parts[-1]
+                filename += '.{0}'.format(url_parts[-1])
 
             urllib.urlretrieve(asset_url, filename)
             use_connector_url = True
         except Exception as e:
-            raise VerboseException(
-                'could not download connector image: %s' % str(e))
+            raise VerboseException('could not download connector image: {0}'.format(str(e)))
     else:
         for _file in exp_files:
             if not 'eas_id' in _file:
                 continue
-            if _file['eas_id'] != str(eas_id):
+            if _file['eas_id'] != eas_id:
                 continue
-            filename = os.path.abspath(
-                '%s/%s' % (exp_files_path, _file['path']))
+            filename = os.path.abspath('{0}/{1}'.format(exp_files_path, _file['path']))
             break
-
-        fylr_util.write_tmp_file('pptx.json', [
-            filename,
-        ])
 
         if filename is None:
             # no asset for this object
             return picture_bottom_line
 
-
     try:
         img = Image.open(filename)
-        fylr_util.write_tmp_file('pptx.json', [
-            str(img),
-        ])
     except Exception as e:
-        fylr_util.write_tmp_file('pptx.json', [
-            "img = Image.open(filename) | error:",
-            str(e),
-        ])
         if use_connector_url:
-            raise VerboseException(
-                'could not load connector image: %s' % str(e))
+            raise VerboseException('could not load connector image: {0}'.format(str(e)))
         else:
-            raise VerboseException(
-                'could not load exported image from local instance slide: %s' % str(e))
+            raise VerboseException('could not load exported image from local instance slide: {0}'.format(str(e)))
 
     try:
         # get placeholder size in emus
@@ -445,10 +421,6 @@ def insert_picture(exp_files_path, exp_files, placeholder, shapes, eas_id, asset
         # remove the original placeholder since it is not needed
         placeholder._element.getparent().remove(placeholder._element)
     except Exception as e:
-        fylr_util.write_tmp_file('pptx.json', [
-            "add_picture | error:",
-            str(e),
-        ])
         placeholder.insert_picture(filename)
 
     return picture_bottom_line
@@ -460,55 +432,51 @@ def create_missing_dirs(f_path):
         os.makedirs(base_dir)
 
 
-def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
+def load_files_from_eas(assets, export_id, api_callback_url, api_callback_token):
 
-    if not isinstance(files, list):
+    if not isinstance(assets, dict):
         # in case the objects that are exported have no asset fields, there is nothing to be done here
         return []
 
     eas_files_by_id = {}
-
-    for f in files:
-
+    for eas_id in assets:
         try:
+            file_id = int(eas_id)
+        except:
+            continue
 
-            file_id = fylr_util.get_json_value(
-                f, 'export_file_internal.file_id')
-            if file_id is None:
-                continue
+        versions = fylr_util.get_json_value(assets[eas_id], 'versions')
+        if not isinstance(versions, list):
+            continue
 
+        for v in versions:
             try:
-                file_id = str(int(file_id))
-            except:
-                continue
 
-            f_path = fylr_util.get_json_value(f, 'path', True)
-            eas_url = '%s/api/v1/export/%s/file/%s?access_token=%s' % (
-                api_callback_url,
-                export_id,
-                f_path,
-                api_callback_token)
+                eas_url = fylr_util.get_json_value(v, 'url', True)
+                resp = requests.get(eas_url, headers={
+                    'Authorization': 'Bearer ' + api_callback_token,
+                })
 
-            resp = requests.get(eas_url)
+                f_path = '_assets/{0}.tmp'.format(eas_id)
+                if resp.status_code == 200:
+                    create_missing_dirs(f_path)
+                    with open(f_path, 'wb') as outf:
+                        outf.write(resp.content)
+                else:
+                    raise VerboseException('could not get file from fylr: status code {0}: {1}'.format(resp.status_code, resp.text))
 
-            if resp.status_code == 200:
-                create_missing_dirs(f_path)
-                with open(f_path, 'wb') as outf:
-                    outf.write(resp.content)
-            else:
-                raise VerboseException('could not get file from fylr: status code %s: %s' %
-                                       (resp.status_code, resp.text))
+                eas_files_by_id[file_id] = {
+                    'eas_id': file_id,
+                    'path': f_path
+                }
 
-            eas_files_by_id[file_id] = {
-                'eas_id': file_id,
-                'eas_url': eas_url,
-                'path': f_path
-            }
+                # only first version is used here
+                break
 
-        except Exception as e:
-            eas_files_by_id[file_id] = {
-                'error': str(e)
-            }
+            except Exception as e:
+                eas_files_by_id[file_id] = {
+                    'error': str(e)
+                }
 
     if len(eas_files_by_id) < 1:
         return[]

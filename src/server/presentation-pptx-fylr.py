@@ -22,21 +22,18 @@ if __name__ == '__main__':
         export_def = fylr_util.get_json_value(info_json, 'export.export', True)
         export_id = fylr_util.get_json_value(export_def, '_id', True)
 
-        produce_opts = fylr_util.get_json_value(
-            export_def, 'produce_options', True)
+        produce_opts = fylr_util.get_json_value(export_def, 'produce_options', True)
 
-        pptx_filename = 'files/%s' % (util.parse_target_filename(produce_opts))
+        pptx_filename = 'files/{0}'.format(util.parse_target_filename(produce_opts))
 
         plugin_action = fylr_util.get_json_value(info_json, 'plugin_action')
         if plugin_action == PLUGIN_ACTION:
-            api_callback_url = fylr_util.get_json_value(
-                info_json, 'api_callback.url', True)
-            api_callback_token = fylr_util.get_json_value(
-                info_json, 'api_callback.token', True)
+            api_callback_url = fylr_util.get_json_value(info_json, 'api_callback.url', True)
+            api_callback_token = fylr_util.get_json_value(info_json, 'api_callback.token', True)
 
             # get files from eas and store locally
             export_files = util.load_files_from_eas(
-                fylr_util.get_json_value(info_json, 'export._files'),
+                fylr_util.get_json_value(export_def, 'assets', True),
                 export_id,
                 api_callback_url,
                 api_callback_token)

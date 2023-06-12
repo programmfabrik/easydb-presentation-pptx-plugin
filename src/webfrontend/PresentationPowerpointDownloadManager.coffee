@@ -1,6 +1,8 @@
 class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 
 	readOpts: ->
+		# map eas ids of originals to the eas id of the actually exported version
+		@version_ids = {}
 		super()
 
 	loca_key: (key) ->
@@ -18,16 +20,18 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 
 
 	getAssetVersionsToExport: (asset, gid) ->
-		console.debug asset
-		if @data_by_gid[gid]?asset_ids.length >= 1
-			# only first asset per object
-			return
-
 		version = Asset.getBestImageForViewport(asset, @pptx_form.quality, @pptx_form.quality)
-		console.debug version
+
 		if not version
 			[]
 		else
+			# for fylr it is necessary to save the id of the generated version,
+			# else for easydb the id of the original can always be used instead
+			_eas_id = version._id
+			if not _eas_id
+				_eas_id = asset.value._id
+			if _eas_id
+				@version_ids[asset.value._id] = _eas_id
 			[ version ]
 
 	filterDownloadableFiles: (files) ->
@@ -36,10 +40,38 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 				return [ f ]
 		return []
 
+	__enrich_slide: (s) ->
+		if s.global_object_id
+			if @data_by_gid[s.global_object_id]?.standard_info
+				s.standard_info = {}
+				for k, v of @data_by_gid[s.global_object_id].standard_info
+					if not v || v == ''
+						continue
+					s.standard_info[k] = v
+
+		if s.asset_id
+			s.version_id = @version_ids[s.asset_id]
+
+		return s
+
 	getExportSaveData: ->
 		data = super()
 		data.export.produce_options.pptx_form = CUI.util.copyObject(@pptx_form, true)
 		data.export.produce_options.plugin = "easydb-presentation-pptx-plugin:create_pptx"
+
+		# for each slide with asset(s) add the id of the exported version
+		# and add the standard info for the object
+		for s in data.export.produce_options.presentation.slides
+			if s.center
+				s.center = @__enrich_slide(s.center)
+			if s.left
+				s.left = @__enrich_slide(s.left)
+			if s.right
+				s.right = @__enrich_slide(s.right)
+
+		# data by gid is not needed since the slide structure was simplified
+		delete(data.export.produce_options.presentation.data_by_gid)
+
 		delete(data.export.produce_options.pptx_form._undo)
 		# console.debug "export save data:", CUI.util.dump(data)
 		data

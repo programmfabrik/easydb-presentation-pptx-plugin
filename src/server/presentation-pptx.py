@@ -18,7 +18,7 @@ def produce_files(easydb_context, parameters, protocol=None):
 
         pack_dir = easydb_context.get_temp_dir()
         pptx_filename = '{0}/produce.pptx'.format(pack_dir)
-        target_filename = '{0}.pptx'.format(produce_opts['presentation']['filename'])
+        target_filename = util.parse_target_filename(produce_opts)
 
         util.produce_files(
             produce_opts,

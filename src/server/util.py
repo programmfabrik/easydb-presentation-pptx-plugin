@@ -46,36 +46,11 @@ def __create_missing_dirs(f_path):
         os.makedirs(base_dir)
 
 
-def __parse_slide_layouts(prs, produce_opts, show_standard):
-    slide_layouts = {}
-
-    for slide in produce_opts['pptx_form']['template']['slides']:
-        if len(show_standard) > 0:
-            if 'show_info' in slide and slide['show_info'] == True:
-                slide_layouts[slide['type']] = {
-                    'layout': prs.slide_layouts[slide['slide_idx']],
-                    'info': slide,
-                }
-        else:
-            if 'show_info' not in slide or slide['show_info'] == False:
-                slide_layouts[slide['type']] = {
-                    'layout': prs.slide_layouts[slide['slide_idx']],
-                    'info': slide,
-                }
-
-    return slide_layouts
-
-
-def __insert_info(placeholder, shapes, standard_info, show_standard, standard_format, picture_bottom_line):
+def __insert_info(text_placeholder, shapes, standard_info, show_standard, standard_format):
     if not isinstance(standard_info, dict):
         return
 
-    top = placeholder.top
-
-    if picture_bottom_line is not None:
-        top = min([picture_bottom_line + __pixels_to_emu(10), top])
-
-    text_box = shapes.add_textbox(placeholder.left, top, placeholder.width, placeholder.height)
+    text_box = shapes.add_textbox(text_placeholder.left, text_placeholder.top, text_placeholder.width, text_placeholder.height)
     text_box.text_frame.word_wrap = True
 
     first_standard_value = True
@@ -102,22 +77,35 @@ def __insert_info(placeholder, shapes, standard_info, show_standard, standard_fo
         p.font.bold = standard_format[s]['bold']
 
     # remove the original placeholder since it is not needed
-    placeholder._element.getparent().remove(placeholder._element)
+    text_placeholder._element.getparent().remove(text_placeholder._element)
 
 
-def __insert_text(placeholder, shapes, text):
+def __insert_text(picture_placeholder, placeholder_to_remove, shapes, text):
+    # remove the obsolete text placeholder under the picture
+    placeholder_to_remove._element.getparent().remove(placeholder_to_remove._element)
+
     if len(text) < 1:
         return
 
-    text_box = shapes.add_textbox(placeholder.left, placeholder.top, placeholder.width, placeholder.height)
-    text_box.text_frame.word_wrap = True
-
+    lines = []
     first_line = True
     for s in text.split('\n'):
-        s = s.strip()
-        if len(s) < 1:
-            continue
+        lines.append(s.strip())
 
+    if len(lines) < 1:
+        return
+
+    fontsize = 26
+    th = __pixels_to_emu(fontsize * len(lines))
+    text_box = shapes.add_textbox(
+        left=picture_placeholder.left,
+        top=picture_placeholder.top + ((picture_placeholder.height - th) / 2),
+        width=picture_placeholder.width,
+        height=th
+    )
+    text_box.text_frame.word_wrap = True
+
+    for s in lines:
         if first_line:
             first_line = False
             p = text_box.text_frame.paragraphs[0]
@@ -126,12 +114,12 @@ def __insert_text(placeholder, shapes, text):
 
         p.text = s
         p.alignment = PP_ALIGN.LEFT
-        p.line_spacing = 1.1
         p.font.name = 'Helvetica'
-        p.font.size = Pt(26)
+        p.font.size = Pt(fontsize)
+        p.font.bold = True
 
     # remove the original placeholder since it is not needed
-    placeholder._element.getparent().remove(placeholder._element)
+    picture_placeholder._element.getparent().remove(picture_placeholder._element)
 
 
 def download_export_file(url, filename):
@@ -144,15 +132,14 @@ def download_export_file(url, filename):
         raise Exception('could not get file from fylr: status code {0}: {1}'.format(resp.status_code, resp.text))
 
 
-def __insert_picture(pack_dir, exp_files, placeholder, shapes, eas_id, asset_url):
+def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, asset_url, placeholder_image, placeholder_info):
 
     if eas_id is None and asset_url is None:
-        return None
-
-    picture_bottom_line = None
+        if placeholder_info is None:
+            return
 
     filename = None
-    use_connector_url = False
+    print_placeholder_info = False
 
     if asset_url is not None:
         try:
@@ -165,9 +152,10 @@ def __insert_picture(pack_dir, exp_files, placeholder, shapes, eas_id, asset_url
                 filename += '.{0}'.format(url_parts[-1])
 
             download_export_file(asset_url, filename)
-            use_connector_url = True
         except Exception as e:
-            raise Exception('could not download connector image: {0}'.format(str(e)))
+            print('could not download connector image: {0}'.format(str(e)))
+            filename = placeholder_image
+            print_placeholder_info = True
     else:
         for _file in exp_files:
             if not 'eas_id' in _file:
@@ -178,21 +166,18 @@ def __insert_picture(pack_dir, exp_files, placeholder, shapes, eas_id, asset_url
             break
 
         if filename is None:
-            # no asset for this object
-            return picture_bottom_line
+            filename = placeholder_image
+            print_placeholder_info = True
 
     try:
         img = Image.open(filename)
     except Exception as e:
-        if use_connector_url:
-            raise Exception('could not load connector image: {0}'.format(str(e)))
-        else:
-            raise Exception('could not load exported image from local instance slide: {0}'.format(str(e)))
+        print('could not load exported image {0}: {1}'.format(filename, str(e)))
 
     try:
         # get placeholder size in emus
-        pw_emu = float(placeholder.width)
-        ph_emu = float(placeholder.height)
+        pw_emu = float(picture_placeholder.width)
+        ph_emu = float(picture_placeholder.height)
 
         iw, ih = img.size
 
@@ -204,34 +189,39 @@ def __insert_picture(pack_dir, exp_files, placeholder, shapes, eas_id, asset_url
         w_ratio = ih_emu / ph_emu
 
         # scale down to fit the longer image side into the shorter placeholder side
-        new_x = 0
-        new_y = 0
-        new_h = 0
-        new_w = 0
+        # make sure to not stretch smaller images
         if h_ratio >= w_ratio:
-            new_h = int(ih_emu / h_ratio)
-            new_w = int(iw_emu / h_ratio)
-            new_y = (ph_emu - new_h) / 2
+            new_h = min(ih_emu, int(ih_emu / h_ratio))
+            new_w = min(iw_emu, int(iw_emu / h_ratio))
         else:
-            new_h = int(ih_emu / w_ratio)
-            new_w = int(iw_emu / w_ratio)
-            new_x = (pw_emu - new_w) / 2
+            new_h = min(ih_emu, int(ih_emu / w_ratio))
+            new_w = min(iw_emu, int(iw_emu / w_ratio))
 
-        shapes.add_picture(
-            filename,
-            new_x + placeholder.left,
-            new_y + placeholder.top,
-            height=new_h
-        )
+        new_x = picture_placeholder.left + (pw_emu - new_w) / 2
+        new_y = picture_placeholder.top + (ph_emu - new_h) / 2
 
-        picture_bottom_line = new_y + placeholder.top + new_h
+        shapes.add_picture(filename, new_x, new_y, height=new_h)
+
+        if print_placeholder_info:
+            # use the info string about the asset to display something informative along the placeholder
+            fontsize = 15
+            text_box = shapes.add_textbox(
+                left=new_x,
+                top=new_y + new_h - __pixels_to_emu(2 * (fontsize + 5)),
+                width=new_w,
+                height=__pixels_to_emu(fontsize + 5)
+            )
+            text_box.text_frame.word_wrap = True
+            p = text_box.text_frame.paragraphs[0]
+            p.text = placeholder_info
+            p.alignment = PP_ALIGN.CENTER
+            p.font.name = 'Helvetica'
+            p.font.size = Pt(fontsize)
 
         # remove the original placeholder since it is not needed
-        placeholder._element.getparent().remove(placeholder._element)
+        picture_placeholder._element.getparent().remove(picture_placeholder._element)
     except Exception as e:
-        placeholder.insert_picture(filename)
-
-    return picture_bottom_line
+        picture_placeholder.insert_picture(placeholder_image)
 
 
 def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
@@ -243,11 +233,17 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
     else:
         show_standard = []
 
-    prs = Presentation('{0}/../templates/{1}'.format(
-        os.path.abspath(os.path.dirname(__file__)),
-        fylr_util.get_json_value(produce_opts, 'pptx_form.template.name', True)))
+    template = fylr_util.get_json_value(produce_opts, 'pptx_form.template', True)
 
-    slide_layouts = __parse_slide_layouts(prs, produce_opts, show_standard)
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    prs = Presentation(os.path.join(cur_dir, '..', 'templates', fylr_util.get_json_value(template, 'name', True)))
+    slide_layouts = {}
+    for slide in fylr_util.get_json_value(template, 'slides', True):
+        slide_layouts[slide['type']] = {
+            'layout': prs.slide_layouts[slide['slide_idx']],
+            'info': slide,
+        }
+    placeholder_image = os.path.join(cur_dir, '..', 'placeholders', fylr_util.get_json_value(template, 'placeholder', True))
 
     slide_id = -1
     for slide in fylr_util.get_json_value(produce_opts, 'presentation.slides', True):
@@ -301,13 +297,16 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
             if not 'global_object_id' in slide['center']:
                 continue
 
-            picture_bottom_line = __insert_picture(
+            __insert_picture(
                 pack_dir,
                 export_files,
                 ppt_slide.placeholders[sl_info['picture']],
                 ppt_slide.shapes,
                 fylr_util.get_json_value(slide, 'center.version_id'),
-                fylr_util.get_json_value(slide, 'center.asset_url'))
+                fylr_util.get_json_value(slide, 'center.asset_url'),
+                placeholder_image,
+                fylr_util.get_json_value(slide, 'center.placeholder_info'),
+            )
 
             if 'text' in sl_info:
                 __insert_info(
@@ -316,41 +315,38 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     fylr_util.get_json_value(slide, 'center.standard_info'),
                     show_standard,
                     standard_format,
-                    picture_bottom_line)
+                )
 
         elif stype == 'duo':
-            picture_bottom_lines = []
 
             if not 'left' in slide and not 'right' in slide:
                 continue
 
             if 'left' in slide:
                 if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
-                    pbl = __insert_picture(
+                    __insert_picture(
                         pack_dir,
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_left']],
                         ppt_slide.shapes,
                         fylr_util.get_json_value(slide, 'left.version_id'),
-                        fylr_util.get_json_value(slide, 'left.asset_url'))
-                    if pbl is not None:
-                        picture_bottom_lines.append(pbl)
+                        fylr_util.get_json_value(slide, 'left.asset_url'),
+                        placeholder_image,
+                        fylr_util.get_json_value(slide, 'left.placeholder_info'),
+                    )
 
             if 'right' in slide:
                 if 'global_object_id' in slide['right'] and 'picture_right' in sl_info:
-                    pbl = __insert_picture(
+                    __insert_picture(
                         pack_dir,
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_right']],
                         ppt_slide.shapes,
                         fylr_util.get_json_value(slide, 'right.version_id'),
-                        fylr_util.get_json_value(slide, 'right.asset_url'))
-                    if pbl is not None:
-                        picture_bottom_lines.append(pbl)
-
-            lowest_picture_bottom_line = None
-            if len(picture_bottom_lines) > 0:
-                lowest_picture_bottom_line = max(picture_bottom_lines)
+                        fylr_util.get_json_value(slide, 'right.asset_url'),
+                        placeholder_image,
+                        fylr_util.get_json_value(slide, 'right.placeholder_info'),
+                    )
 
             if 'left' in slide:
                 if 'global_object_id' in slide['left'] and 'text_left' in sl_info:
@@ -360,7 +356,7 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         fylr_util.get_json_value(slide, 'left.standard_info'),
                         show_standard,
                         standard_format,
-                        lowest_picture_bottom_line)
+                    )
 
             if 'right' in slide:
                 if 'global_object_id' in slide['right'] and 'text_right' in sl_info:
@@ -370,28 +366,25 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         fylr_util.get_json_value(slide, 'right.standard_info'),
                         show_standard,
                         standard_format,
-                        lowest_picture_bottom_line)
+                    )
 
         elif stype == 'imageText':
-            picture_bottom_lines = []
 
             if not 'left' in slide and not 'data' in slide:
                 continue
 
             if 'left' in slide:
                 if 'global_object_id' in slide['left'] and 'picture_left' in sl_info:
-                    picture_bottom_lines.append(__insert_picture(
+                    __insert_picture(
                         pack_dir,
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_left']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide['left'], 'version_id'),
-                        fylr_util.get_json_value(slide['left'], 'asset_url')))
-
-            lowest_picture_bottom_line = None
-            picture_bottom_lines = list(filter(None, picture_bottom_lines))
-            if len(picture_bottom_lines) > 0:
-                lowest_picture_bottom_line = max(picture_bottom_lines)
+                        fylr_util.get_json_value(slide, 'left.version_id'),
+                        fylr_util.get_json_value(slide, 'left.asset_url'),
+                        placeholder_image,
+                        fylr_util.get_json_value(slide, 'left.placeholder_info'),
+                    )
 
             if 'left' in slide:
                 if 'global_object_id' in slide['left'] and 'text_left' in sl_info:
@@ -401,12 +394,13 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         fylr_util.get_json_value(slide, 'left.standard_info'),
                         show_standard,
                         standard_format,
-                        lowest_picture_bottom_line)
+                    )
 
             text = fylr_util.get_json_value(slide, 'data.text')
             if isinstance(text, str) and 'text_right' in sl_info:
                 __insert_text(
                     ppt_slide.placeholders[sl_info['text_right']],
+                    ppt_slide.placeholders[sl_info['text_box_to_remove']],
                     ppt_slide.shapes,
                     text)
 

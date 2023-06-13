@@ -107,8 +107,9 @@ if __name__ == '__main__':
                 }
             })
             response['_plugin_log'] = [
-                'built pptx file: ' + pptx_filename
+                'prepared pptx file: ' + pptx_filename
             ]
+            del response['_log']
             response['_state'] = 'done'
 
             # everything ok, set status as done

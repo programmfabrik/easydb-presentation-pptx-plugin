@@ -5,6 +5,7 @@ SRC = $(CURDIR)/src
 SRC_WEB = $(SRC)/webfrontend
 SRC_SERVER = $(SRC)/server
 SRC_TEMPLATES = $(SRC)/templates
+SRC_PLACEHOLDERS = $(SRC)/placeholders
 JS = $(SRC_WEB)/$(PLUGIN_NAME).js
 
 FYLR_LIBRARY = $(SRC_SERVER)/fylr_lib_plugin_python3
@@ -15,6 +16,7 @@ BUILD_WEB = $(BUILD_DIR)/webfrontend
 BUILD_L10N = $(BUILD_WEB)/l10n
 BUILD_SERVER = $(BUILD_DIR)/server
 BUILD_TEMPLATES = $(BUILD_DIR)/templates
+BUILD_PLACEHOLDERS = $(BUILD_DIR)/placeholders
 
 BUILD_INFO = build-info.json
 
@@ -45,6 +47,7 @@ build: l10n2json code buildinfojson ## build all (creates build folder)
 	mkdir -p $(BUILD_L10N)
 	cp -r $(L10N_CSV) $(BUILD_L10N)
 	cp -r $(SRC_TEMPLATES) $(BUILD_DIR)
+	cp -r $(SRC_PLACEHOLDERS) $(BUILD_DIR)
 	cp manifest.master.yml $(BUILD_DIR)/manifest.yml
 	cp $(BUILD_INFO) $(BUILD_DIR)
 
@@ -103,4 +106,6 @@ INSTALL_FILES = \
 	$(BUILD_TEMPLATES)/default-white.pptx \
 	$(BUILD_TEMPLATES)/default-black-4-3.pptx \
 	$(BUILD_TEMPLATES)/default-white-4-3.pptx \
+	$(BUILD_PLACEHOLDERS)/placeholder_dark.png \
+	$(BUILD_PLACEHOLDERS)/placeholder_light.png \
 	manifest.master.yml

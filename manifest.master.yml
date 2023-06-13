@@ -61,12 +61,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: light.png # placeholder image for assets that have no valid image version
 
       - name: default-black.pptx
         # format: 16:9
@@ -113,12 +116,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: dark.png
 
       - name: default-white-4-3.pptx
         # format: 4:3
@@ -165,12 +171,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: light.png
 
       - name: default-black-4-3.pptx
         # format: 4:3
@@ -217,12 +226,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: dark.png
 
     qualities:
       - 10000

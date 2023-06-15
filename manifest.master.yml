@@ -6,11 +6,14 @@ plugin:
   server:
     api-version:
       require: 1
+  l10n: webfrontend/l10n/presentation-pptx.csv # l10n csv file for fylr
   webfrontend:
-    url: PresentationPowerpoint.js
-    l10n: l10n/
-  # list of files, needed by python-pptx
-  python-pptx:
+    url: presentation-pptx.js
+    l10n: l10n/ # l10n json files for easydb5
+
+  custom:
+
+    # list of files, needed by python-pptx
     templates:
 
       - name: default-white.pptx
@@ -58,12 +61,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: light.png # placeholder image for assets that have no valid image version
 
       - name: default-black.pptx
         # format: 16:9
@@ -110,12 +116,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: dark.png
 
       - name: default-white-4-3.pptx
         # format: 4:3
@@ -162,12 +171,15 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: light.png
 
       - name: default-black-4-3.pptx
         # format: 4:3
@@ -214,18 +226,39 @@ plugin:
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
           - type: "imageText"
             show_info: true
             slide_idx: 4
             picture_left: 13
             text_left: 18
             text_right: 14
+            text_box_to_remove: 19
+        placeholder: dark.png
 
     qualities:
       - 10000
       - 1024
       - 640
 
+base_url_prefix: webfrontend
 
+# callback registration in easydb5
 python-2:
-  file: src/server/presentation-pptx.py
+  file: build/server/presentation-pptx.py
+
+# callback registration in fylr
+callbacks:
+  export:
+    create_pptx:
+      exec:
+        service: python3
+        commands:
+          - prog: python3
+            stdout:
+              type: body
+            args:
+              - type: value
+                value: "%_exec.pluginDir%/server/presentation-pptx-fylr.py"
+              - type: value
+                value: "%info.json%"

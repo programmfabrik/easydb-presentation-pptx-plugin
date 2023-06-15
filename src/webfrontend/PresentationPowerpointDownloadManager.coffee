@@ -128,6 +128,7 @@ class PresentationPowerpointDownloadManager extends PresentationDownloadManager
 			name: "template"
 			options: template_opts
 			radio: true
+			horizontal: false
 
 		quality_opts = []
 		for quality in pptx_config["custom"]?.qualities or []

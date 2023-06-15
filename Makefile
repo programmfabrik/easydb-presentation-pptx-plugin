@@ -31,7 +31,7 @@ L10N_GOOGLE_GID = 1786140544
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = "(:|##)"}; {printf "\033[36m%-30s\033[0m %s\n", $$2, $$4}'
 
-all: clean build zip ## pull CSV & build & zip
+all: clean build ## pull CSV & build
 
 google-csv: ## get loca CSV from google
 	mkdir -p $(L10N_DIR)

@@ -23,7 +23,7 @@ BUILD_INFO = build-info.json
 COFFEE_FILES = $(shell find $(SRC_WEB) -name '*.coffee')
 
 L10N_DIR = $(CURDIR)/l10n
-L10N_CSV = $(L10N_DIR)/$(PLUGIN_NAME).csv
+L10N_FILES = $(L10N_DIR)/$(PLUGIN_NAME).csv
 
 L10N_GOOGLE_KEY = 1glXObMmIUd0uXxdFdiPWRZPLCx6qEUaxDfNnmttave4
 L10N_GOOGLE_GID = 1786140544
@@ -35,19 +35,15 @@ include $(EASYDB_LIBRARY)/base-plugins.make
 
 all: clean build ## pull CSV & build
 
-google_csv: ## get loca CSV from google
-	mkdir -p $(L10N_DIR)
-	curl --silent -L -o - "https://docs.google.com/spreadsheets/u/1/d/$(L10N_GOOGLE_KEY)/export?format=csv&gid=$(L10N_GOOGLE_GID)" | tr -d "\r" > $(L10N_CSV)
-
 code: $(JS) ## build Coffeescript code
 
-build: l10n2json code buildinfojson ## build all (creates build folder)
+build: code buildinfojson ## build all (creates build folder)
 	mkdir -p $(BUILD_SERVER)
 	cp -r $(SRC_SERVER)/* $(BUILD_SERVER)
 	mkdir -p $(BUILD_WEB)
 	cp -r $(JS) $(BUILD_WEB)
 	mkdir -p $(BUILD_L10N)
-	cp -r $(L10N_CSV) $(BUILD_L10N)
+	cp -r $(L10N_FILES) $(BUILD_L10N)
 	cp -r $(SRC_TEMPLATES) $(BUILD_DIR)
 	cp -r $(SRC_PLACEHOLDERS) $(BUILD_DIR)
 	cp manifest.master.yml $(BUILD_DIR)/manifest.yml
@@ -77,10 +73,6 @@ zip: build ## build zip file for publishing (fylr only)
 
 ##############################
 # easydb only
-
-l10n2json: ## build l10n json files (easydb5 only)
-	mkdir -p $(BUILD_L10N)
-	$(EASYDB_LIBRARY)/l10n2json.py $(L10N_CSV) $(BUILD_L10N)
 
 INSTALL_FILES = \
 	$(BUILD_L10N)/*.json \

@@ -43,6 +43,7 @@ build: code buildinfojson ## build all (creates build folder)
 	mkdir -p $(BUILD_WEB)
 	cp -r $(JS) $(BUILD_WEB)
 	mkdir -p $(BUILD_L10N)
+	chmod 777 $(L10N_FILES)
 	cp -r $(L10N_FILES) $(BUILD_L10N)
 	cp -r $(SRC_TEMPLATES) $(BUILD_DIR)
 	cp -r $(SRC_PLACEHOLDERS) $(BUILD_DIR)
@@ -67,7 +68,7 @@ clean: ## clean build and temporary files
 zip: build ## build zip file for publishing (fylr only)
 	(rm $(BUILD_DIR)/$(PLUGIN_NAME).zip || true)
 	cp -r $(BUILD_DIR) $(PLUGIN_PATH)
-	zip $(BUILD_DIR)/$(PLUGIN_NAME).zip -x */l10n/*.json -x *.pyc -x */__pycache__/* -r $(PLUGIN_PATH)/
+	zip $(BUILD_DIR)/$(PLUGIN_NAME).zip -x *.pyc -x */__pycache__/* -r $(PLUGIN_PATH)/
 	rm -rf $(PLUGIN_PATH)
 
 

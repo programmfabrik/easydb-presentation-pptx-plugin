@@ -3,7 +3,7 @@
 import sys
 import json
 
-import util
+import shared
 from fylr_lib_plugin_python3 import util as fylr_util
 
 
@@ -27,7 +27,7 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
                 continue
 
             f_path = fylr_util.get_json_value(f, 'path', True)
-            util.download_export_file(
+            shared.download_export_file(
                 '{0}/api/v1/export/{1}/file/{2}?access_token={3}'.format(
                     api_callback_url,
                     export_id,
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         export_def = fylr_util.get_json_value(info_json, 'export.export', True)
         produce_opts = fylr_util.get_json_value(export_def, 'produce_options', True)
 
-        pptx_filename = 'files/{0}'.format(util.parse_target_filename(produce_opts))
+        pptx_filename = 'files/{0}'.format(shared.parse_target_filename(produce_opts))
 
         plugin_action = fylr_util.get_json_value(info_json, 'plugin_action')
         if plugin_action == PLUGIN_ACTION:
@@ -71,7 +71,7 @@ if __name__ == '__main__':
             )
 
             # create the pptx file, save as temporary file
-            util.produce_files(
+            shared.produce_files(
                 produce_opts,
                 '.',
                 export_files,

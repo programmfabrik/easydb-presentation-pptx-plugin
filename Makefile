@@ -1,7 +1,7 @@
 PLUGIN_NAME = presentation-pptx
 PLUGIN_PATH = easydb-presentation-pptx-plugin
 
-SRC = src
+SRC = $(CURDIR)/src
 SRC_WEB = $(SRC)/webfrontend
 SRC_SERVER = $(SRC)/server
 SRC_TEMPLATES = $(SRC)/templates
@@ -9,7 +9,7 @@ SRC_PLACEHOLDERS = $(SRC)/placeholders
 JS = $(SRC_WEB)/$(PLUGIN_NAME).js
 
 FYLR_LIBRARY = $(SRC_SERVER)/fylr_lib_plugin_python3
-EASYDB_LIBRARY = easydb-library/tools
+EASYDB_LIBRARY = $(CURDIR)/easydb-library/tools
 
 BUILD_DIR = build
 BUILD_WEB = $(BUILD_DIR)/webfrontend
@@ -22,7 +22,7 @@ BUILD_INFO = build-info.json
 
 COFFEE_FILES = $(shell find $(SRC_WEB) -name '*.coffee')
 
-L10N_DIR = l10n
+L10N_DIR = $(CURDIR)/l10n
 L10N_FILES = $(L10N_DIR)/$(PLUGIN_NAME).csv
 
 L10N_GOOGLE_KEY = 1glXObMmIUd0uXxdFdiPWRZPLCx6qEUaxDfNnmttave4
@@ -79,9 +79,7 @@ INSTALL_FILES = \
 	$(BUILD_L10N)/*.json \
 	$(BUILD_WEB)/$(PLUGIN_NAME).js \
 	$(BUILD_SERVER)/presentation-pptx.py \
-	$(BUILD_SERVER)/shared.py \
-	$(BUILD_SERVER)/fylr_lib_plugin_python3/util.py \
-	$(BUILD_SERVER)/fylr_lib_plugin_python3/__init__.py \
+	$(BUILD_SERVER)/fylr_lib_plugin_python3/* \
 	$(BUILD_TEMPLATES)/*.pptx \
 	$(BUILD_PLACEHOLDERS)/*.png \
 	manifest.master.yml

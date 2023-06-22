@@ -79,6 +79,7 @@ INSTALL_FILES = \
 	$(BUILD_L10N)/*.json \
 	$(BUILD_WEB)/$(PLUGIN_NAME).js \
 	$(BUILD_SERVER)/presentation-pptx.py \
+	$(BUILD_SERVER)/prespptxutil.py \
 	$(BUILD_SERVER)/fylr_lib_plugin_python3/* \
 	$(BUILD_TEMPLATES)/*.pptx \
 	$(BUILD_PLACEHOLDERS)/*.png \

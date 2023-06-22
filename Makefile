@@ -8,7 +8,6 @@ SRC_TEMPLATES = $(SRC)/templates
 SRC_PLACEHOLDERS = $(SRC)/placeholders
 JS = $(SRC_WEB)/$(PLUGIN_NAME).js
 
-FYLR_LIBRARY = $(SRC_SERVER)/fylr_lib_plugin_python3
 EASYDB_LIBRARY = $(CURDIR)/easydb-library/tools
 
 BUILD_DIR = build
@@ -53,8 +52,6 @@ build: code buildinfojson ## build all (creates build folder)
 clean: ## clean build and temporary files
 	rm -f $(SRC_SERVER)/*.pyc
 	rm -rf $(SRC_SERVER)/__pycache__
-	rm -f $(FYLR_LIBRARY)/*.pyc
-	rm -rf $(FYLR_LIBRARY)/__pycache__
 	rm -f $(SRC_WEB)/*.js
 	rm -f $(JS)
 	rm -rf $(L10N_DIR)/*.json
@@ -78,9 +75,10 @@ zip: build ## build zip file for publishing (fylr only)
 INSTALL_FILES = \
 	$(BUILD_L10N)/*.json \
 	$(BUILD_WEB)/$(PLUGIN_NAME).js \
-	$(BUILD_SERVER)/presentation-pptx.py \
-	$(BUILD_SERVER)/prespptxutil.py \
-	$(BUILD_SERVER)/fylr_lib_plugin_python3/* \
+	$(BUILD_SERVER)/presentation_pptx_easydb5.py \
+	$(BUILD_SERVER)/presentation_pptx_modules/__init__.py \
+	$(BUILD_SERVER)/presentation_pptx_modules/build_pptx.py \
+	$(BUILD_SERVER)/presentation_pptx_modules/pptx_util.py \
 	$(BUILD_TEMPLATES)/*.pptx \
 	$(BUILD_PLACEHOLDERS)/*.png \
 	manifest.master.yml

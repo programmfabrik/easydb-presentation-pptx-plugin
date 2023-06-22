@@ -244,7 +244,7 @@ base_url_prefix: webfrontend
 
 # callback registration in easydb5
 python-2:
-  file: build/server/presentation-pptx.py
+  file: build/server/presentation_pptx_easydb5.py
 
 # callback registration in fylr
 callbacks:
@@ -258,6 +258,6 @@ callbacks:
               type: body
             args:
               - type: value
-                value: "%_exec.pluginDir%/server/presentation-pptx-fylr.py"
+                value: "%_exec.pluginDir%/server/presentation_pptx_fylr.py"
               - type: value
                 value: "%info.json%"

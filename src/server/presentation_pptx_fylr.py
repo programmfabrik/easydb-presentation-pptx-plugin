@@ -3,9 +3,8 @@
 import sys
 import json
 
-import util
-from fylr_lib_plugin_python3 import util as fylr_util
-
+from presentation_pptx_modules import build_pptx
+from presentation_pptx_modules import pptx_util
 
 PPTX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 PLUGIN_ACTION = 'produce?create_pptx'
@@ -22,12 +21,12 @@ def load_files_from_eas(files, export_id, api_callback_url, api_callback_token):
     for f in files:
         try:
 
-            file_id = fylr_util.get_json_value(f, 'export_file_internal.file_id')
+            file_id = pptx_util.get_json_value(f, 'export_file_internal.file_id')
             if not isinstance(file_id, int):
                 continue
 
-            f_path = fylr_util.get_json_value(f, 'path', True)
-            util.download_export_file(
+            f_path = pptx_util.get_json_value(f, 'path', True)
+            pptx_util.download_export_file(
                 '{0}/api/v1/export/{1}/file/{2}?access_token={3}'.format(
                     api_callback_url,
                     export_id,
@@ -54,24 +53,24 @@ if __name__ == '__main__':
         # read from %info.json% (needs to be given as the first argument)
         info_json = json.loads(sys.argv[1])
 
-        export_def = fylr_util.get_json_value(info_json, 'export.export', True)
-        produce_opts = fylr_util.get_json_value(export_def, 'produce_options', True)
+        export_def = pptx_util.get_json_value(info_json, 'export.export', True)
+        produce_opts = pptx_util.get_json_value(export_def, 'produce_options', True)
 
-        pptx_filename = 'files/{0}'.format(util.parse_target_filename(produce_opts))
+        pptx_filename = 'files/{0}'.format(pptx_util.parse_target_filename(produce_opts))
 
-        plugin_action = fylr_util.get_json_value(info_json, 'plugin_action')
+        plugin_action = pptx_util.get_json_value(info_json, 'plugin_action')
         if plugin_action == PLUGIN_ACTION:
 
             # fylr export is done on the fly, so request the exported images and save them in a temporary folder
             export_files = load_files_from_eas(
-                files=fylr_util.get_json_value(info_json, 'export._files', True),
-                export_id=fylr_util.get_json_value(export_def, '_id', True),
-                api_callback_url=fylr_util.get_json_value(info_json, 'api_callback.url', True),
-                api_callback_token=fylr_util.get_json_value(info_json, 'api_callback.token', True),
+                files=pptx_util.get_json_value(info_json, 'export._files', True),
+                export_id=pptx_util.get_json_value(export_def, '_id', True),
+                api_callback_url=pptx_util.get_json_value(info_json, 'api_callback.url', True),
+                api_callback_token=pptx_util.get_json_value(info_json, 'api_callback.token', True),
             )
 
             # create the pptx file, save as temporary file
-            util.produce_files(
+            build_pptx.produce_files(
                 produce_opts,
                 '.',
                 export_files,
@@ -84,9 +83,9 @@ if __name__ == '__main__':
 
         else:
 
-            response = fylr_util.get_json_value(info_json, 'export', True)
+            response = pptx_util.get_json_value(info_json, 'export', True)
 
-            if fylr_util.get_json_value(response, 'export.search') is None:
+            if pptx_util.get_json_value(response, 'export.search') is None:
                 response['export']['search'] = {}
 
             # hide all files that are not exported
@@ -113,7 +112,9 @@ if __name__ == '__main__':
             response['_state'] = 'done'
 
             # everything ok, set status as done
-            fylr_util.return_response(response)
+            sys.stdout.write(json.dumps(response))
+            sys.stdout.write('\n')
 
     except Exception as e:
-        fylr_util.return_error_response(str(e))
+        sys.stderr.write(str(e))
+        sys.stderr.write('\n')

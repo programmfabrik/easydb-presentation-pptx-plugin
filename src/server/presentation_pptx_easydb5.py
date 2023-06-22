@@ -1,5 +1,6 @@
 import traceback
-import prespptxutil as util
+from presentation_pptx_modules import build_pptx
+from presentation_pptx_modules import pptx_util
 
 
 def easydb_server_start(easydb_context):
@@ -18,9 +19,9 @@ def produce_files(easydb_context, parameters, protocol=None):
 
         pack_dir = easydb_context.get_temp_dir()
         pptx_filename = '{0}/produce.pptx'.format(pack_dir)
-        target_filename = util.parse_target_filename(produce_opts)
+        target_filename = pptx_util.parse_target_filename(produce_opts)
 
-        util.produce_files(
+        build_pptx.produce_files(
             produce_opts,
             exp.getFilesPath(),
             exp.getFiles(),

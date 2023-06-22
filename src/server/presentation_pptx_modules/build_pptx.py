@@ -2,14 +2,14 @@
 
 import collections
 import collections.abc
+
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 
 from PIL import Image
-import requests
 
-from fylr_lib_plugin_python3 import util as fylr_util
+from . import pptx_util
 
 import hashlib
 import os
@@ -34,16 +34,6 @@ def __get_standard_format():
             'bold': False
         }
     }
-
-
-def parse_target_filename(produce_opts):
-    return '{0}.pptx'.format(fylr_util.get_json_value(produce_opts, 'presentation.filename', True))
-
-
-def __create_missing_dirs(f_path):
-    base_dir = '/'.join(f_path.split('/')[:-1])
-    if not os.path.exists(base_dir):
-        os.makedirs(base_dir)
 
 
 def __insert_info(text_placeholder, shapes, standard_info, show_standard, standard_format):
@@ -122,16 +112,6 @@ def __insert_text(picture_placeholder, placeholder_to_remove, shapes, text):
     picture_placeholder._element.getparent().remove(picture_placeholder._element)
 
 
-def download_export_file(url, filename):
-    resp = requests.get(url)
-    if resp.status_code == 200:
-        __create_missing_dirs(filename)
-        with open(os.path.abspath(filename), 'wb') as outf:
-            outf.write(resp.content)
-    else:
-        raise Exception('could not get file from fylr: status code {0}: {1}'.format(resp.status_code, resp.text))
-
-
 def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, asset_url, placeholder_image, placeholder_info):
 
     if eas_id is None and asset_url is None:
@@ -151,7 +131,7 @@ def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, a
             if len(url_parts) > 1:
                 filename += '.{0}'.format(url_parts[-1])
 
-            download_export_file(asset_url, filename)
+            pptx_util.download_export_file(asset_url, filename)
         except Exception as e:
             print('could not download connector image: {0}'.format(str(e)))
             filename = placeholder_image
@@ -227,26 +207,26 @@ def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, a
 def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
 
     standard_format = __get_standard_format()
-    show_standard = fylr_util.get_json_value(produce_opts, 'presentation.settings.show_standard')
+    show_standard = pptx_util.get_json_value(produce_opts, 'presentation.settings.show_standard')
     if isinstance(show_standard, str):
         show_standard = list(map(lambda s: s.strip(), show_standard.split()))
     else:
         show_standard = []
 
-    template = fylr_util.get_json_value(produce_opts, 'pptx_form.template', True)
+    template = pptx_util.get_json_value(produce_opts, 'pptx_form.template', True)
 
     cur_dir = os.path.abspath(os.path.dirname(__file__))
-    prs = Presentation(os.path.join(cur_dir, '..', 'templates', fylr_util.get_json_value(template, 'name', True)))
+    prs = Presentation(os.path.join(cur_dir, '..', '..', 'templates', pptx_util.get_json_value(template, 'name', True)))
     slide_layouts = {}
-    for slide in fylr_util.get_json_value(template, 'slides', True):
+    for slide in pptx_util.get_json_value(template, 'slides', True):
         slide_layouts[slide['type']] = {
             'layout': prs.slide_layouts[slide['slide_idx']],
             'info': slide,
         }
-    placeholder_image = os.path.join(cur_dir, '..', 'placeholders', fylr_util.get_json_value(template, 'placeholder', True))
+    placeholder_image = os.path.join(cur_dir, '..', '..', 'placeholders', pptx_util.get_json_value(template, 'placeholder', True))
 
     slide_id = -1
-    for slide in fylr_util.get_json_value(produce_opts, 'presentation.slides', True):
+    for slide in pptx_util.get_json_value(produce_opts, 'presentation.slides', True):
         slide_id += 1
 
         stype = slide['type']
@@ -256,11 +236,11 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
 
         ppt_slide = prs.slides.add_slide(sl['layout'])
 
-        title_key = fylr_util.get_json_value(sl_info, 'title')
-        subtitle_key = fylr_util.get_json_value(sl_info, 'subtitle')
+        title_key = pptx_util.get_json_value(sl_info, 'title')
+        subtitle_key = pptx_util.get_json_value(sl_info, 'subtitle')
 
-        data_title = fylr_util.get_json_value(slide, 'data.title')
-        data_info = fylr_util.get_json_value(slide, 'data.info')
+        data_title = pptx_util.get_json_value(slide, 'data.title')
+        data_info = pptx_util.get_json_value(slide, 'data.info')
 
         if stype == 'start':
             if not 'data' in slide:
@@ -302,17 +282,17 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                 export_files,
                 ppt_slide.placeholders[sl_info['picture']],
                 ppt_slide.shapes,
-                fylr_util.get_json_value(slide, 'center.version_id'),
-                fylr_util.get_json_value(slide, 'center.asset_url'),
+                pptx_util.get_json_value(slide, 'center.version_id'),
+                pptx_util.get_json_value(slide, 'center.asset_url'),
                 placeholder_image,
-                fylr_util.get_json_value(slide, 'center.placeholder_info'),
+                pptx_util.get_json_value(slide, 'center.placeholder_info'),
             )
 
             if 'text' in sl_info:
                 __insert_info(
                     ppt_slide.placeholders[sl_info['text']],
                     ppt_slide.shapes,
-                    fylr_util.get_json_value(slide, 'center.standard_info'),
+                    pptx_util.get_json_value(slide, 'center.standard_info'),
                     show_standard,
                     standard_format,
                 )
@@ -329,10 +309,10 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_left']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'left.version_id'),
-                        fylr_util.get_json_value(slide, 'left.asset_url'),
+                        pptx_util.get_json_value(slide, 'left.version_id'),
+                        pptx_util.get_json_value(slide, 'left.asset_url'),
                         placeholder_image,
-                        fylr_util.get_json_value(slide, 'left.placeholder_info'),
+                        pptx_util.get_json_value(slide, 'left.placeholder_info'),
                     )
 
             if 'right' in slide:
@@ -342,10 +322,10 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_right']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'right.version_id'),
-                        fylr_util.get_json_value(slide, 'right.asset_url'),
+                        pptx_util.get_json_value(slide, 'right.version_id'),
+                        pptx_util.get_json_value(slide, 'right.asset_url'),
                         placeholder_image,
-                        fylr_util.get_json_value(slide, 'right.placeholder_info'),
+                        pptx_util.get_json_value(slide, 'right.placeholder_info'),
                     )
 
             if 'left' in slide:
@@ -353,7 +333,7 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     __insert_info(
                         ppt_slide.placeholders[sl_info['text_left']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'left.standard_info'),
+                        pptx_util.get_json_value(slide, 'left.standard_info'),
                         show_standard,
                         standard_format,
                     )
@@ -363,7 +343,7 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     __insert_info(
                         ppt_slide.placeholders[sl_info['text_right']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'right.standard_info'),
+                        pptx_util.get_json_value(slide, 'right.standard_info'),
                         show_standard,
                         standard_format,
                     )
@@ -380,10 +360,10 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                         export_files,
                         ppt_slide.placeholders[sl_info['picture_left']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'left.version_id'),
-                        fylr_util.get_json_value(slide, 'left.asset_url'),
+                        pptx_util.get_json_value(slide, 'left.version_id'),
+                        pptx_util.get_json_value(slide, 'left.asset_url'),
                         placeholder_image,
-                        fylr_util.get_json_value(slide, 'left.placeholder_info'),
+                        pptx_util.get_json_value(slide, 'left.placeholder_info'),
                     )
 
             if 'left' in slide:
@@ -391,12 +371,12 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     __insert_info(
                         ppt_slide.placeholders[sl_info['text_left']],
                         ppt_slide.shapes,
-                        fylr_util.get_json_value(slide, 'left.standard_info'),
+                        pptx_util.get_json_value(slide, 'left.standard_info'),
                         show_standard,
                         standard_format,
                     )
 
-            text = fylr_util.get_json_value(slide, 'data.text')
+            text = pptx_util.get_json_value(slide, 'data.text')
             if isinstance(text, str) and 'text_right' in sl_info:
                 __insert_text(
                     ppt_slide.placeholders[sl_info['text_right']],
@@ -404,5 +384,5 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     ppt_slide.shapes,
                     text)
 
-    __create_missing_dirs(pptx_filename)
+    pptx_util.create_missing_dirs(pptx_filename)
     prs.save(pptx_filename)

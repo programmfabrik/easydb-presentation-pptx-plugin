@@ -36,7 +36,7 @@ all: clean build ## pull CSV & build
 
 code: $(JS) ## build Coffeescript code
 
-build: code buildinfojson ## build all (creates build folder)
+build: code build-stamp-l10n buildinfojson ## build all (creates build folder)
 	mkdir -p $(BUILD_SERVER)
 	cp -r $(SRC_SERVER)/* $(BUILD_SERVER)
 	mkdir -p $(BUILD_WEB)
@@ -57,6 +57,7 @@ clean: ## clean build and temporary files
 	rm -rf $(L10N_DIR)/*.json
 	rm -rf $(BUILD_DIR)
 	rm -f $(BUILD_INFO)
+	rm -f build-stamp-l10n
 
 
 ##############################
@@ -73,12 +74,27 @@ zip: build ## build zip file for publishing (fylr only)
 # easydb only
 
 INSTALL_FILES = \
-	$(BUILD_L10N)/*.json \
+	$(BUILD_L10N)/cultures.json \
+	$(BUILD_L10N)/de-DE.json \
+	$(BUILD_L10N)/en-US.json \
+	$(BUILD_L10N)/da-DK.json \
+	$(BUILD_L10N)/fi-FI.json \
+	$(BUILD_L10N)/sv-SE.json \
+	$(BUILD_L10N)/fr-FR.json \
+	$(BUILD_L10N)/it-IT.json \
+	$(BUILD_L10N)/es-ES.json \
+	$(BUILD_L10N)/cs-CZ.json \
+	$(BUILD_L10N)/pl-PL.json \
+	$(BUILD_L10N)/ru-RU.json \
 	$(BUILD_WEB)/$(PLUGIN_NAME).js \
 	$(BUILD_SERVER)/presentation_pptx_easydb5.py \
 	$(BUILD_SERVER)/presentation_pptx_modules/__init__.py \
 	$(BUILD_SERVER)/presentation_pptx_modules/build_pptx.py \
 	$(BUILD_SERVER)/presentation_pptx_modules/pptx_util.py \
-	$(BUILD_TEMPLATES)/*.pptx \
-	$(BUILD_PLACEHOLDERS)/*.png \
+	$(BUILD_TEMPLATES)/default-black.pptx \
+	$(BUILD_TEMPLATES)/default-white.pptx \
+	$(BUILD_TEMPLATES)/default-black-4-3.pptx \
+	$(BUILD_TEMPLATES)/default-white-4-3.pptx \
+	$(BUILD_PLACEHOLDERS)/dark.png \
+	$(BUILD_PLACEHOLDERS)/light.png \
 	manifest.master.yml

@@ -247,7 +247,7 @@ base_url_prefix: webfrontend
 
 # callback registration in easydb5
 python-2:
-  file: build/server/presentation_pptx_easydb5.py
+  file: server/presentation_pptx_easydb5.py
 
 # callback registration in fylr
 callbacks:

@@ -97,4 +97,4 @@ INSTALL_FILES = \
 	$(BUILD_TEMPLATES)/default-white-4-3.pptx \
 	$(BUILD_PLACEHOLDERS)/dark.png \
 	$(BUILD_PLACEHOLDERS)/light.png \
-	manifest.master.yml
+	$(BUILD_DIR)/manifest.yml

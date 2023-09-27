@@ -1,5 +1,6 @@
 plugin:
   name: easydb-presentation-pptx-plugin
+  url: https://github.com/programmfabrik/easydb-presentation-pptx-plugin
   displayname:
     en-US: "Presentation PPTX Export Plugin"
     de-DE: "Präsentationen PPTX-Export Plugin"

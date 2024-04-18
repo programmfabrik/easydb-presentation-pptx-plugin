@@ -1,15 +1,17 @@
 import traceback
-from presentation_pptx_modules import build_pptx
-from presentation_pptx_modules import pptx_util
+from presentation_pptx_modules import build_pptx, pptx_util
 
 
-def easydb_server_start(easydb_context):
-    easydb_context.register_callback('export_produce', {
-        'callback': 'produce_files',
-    })
+def easydb_server_start(easydb_context) -> None:
+    easydb_context.register_callback(
+        'export_produce',
+        {
+            'callback': 'produce_files',
+        },
+    )
 
 
-def produce_files(easydb_context, parameters, protocol=None):
+def produce_files(easydb_context, parameters, protocol=None) -> None:
     try:
         exp = easydb_context.get_exporter()
         produce_opts = exp.getExport()['export']['produce_options']
@@ -18,14 +20,15 @@ def produce_files(easydb_context, parameters, protocol=None):
             return
 
         pack_dir = easydb_context.get_temp_dir()
-        pptx_filename = '{0}/produce.pptx'.format(pack_dir)
+        pptx_filename = f'{pack_dir}/produce.pptx'
         target_filename = pptx_util.parse_target_filename(produce_opts)
 
         build_pptx.produce_files(
             produce_opts,
             exp.getFilesPath(),
             exp.getFiles(),
-            pptx_filename)
+            pptx_filename,
+        )
 
         exp.addFile(pptx_filename, target_filename)
 

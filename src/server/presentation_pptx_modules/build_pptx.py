@@ -4,6 +4,7 @@ import collections
 import collections.abc
 
 from pptx import Presentation
+from pptx.shapes.shapetree import SlideShapes, SlidePlaceholders
 from pptx.util import Pt
 from pptx.enum.text import PP_ALIGN
 
@@ -15,32 +16,43 @@ import hashlib
 import os
 
 
-def __pixels_to_emu(px, dpi=72):
+def __pixels_to_emu(px: int, dpi: int = 72) -> float:
     return float(px * (914400 / dpi))
 
 
-def __get_standard_format():
+def __get_standard_format() -> dict[str]:
     return {
         '1': {
             'size': 26,
-            'bold': True
+            'bold': True,
         },
         '2': {
             'size': 19,
-            'bold': False
+            'bold': False,
         },
         '3': {
             'size': 16,
-            'bold': False
-        }
+            'bold': False,
+        },
     }
 
 
-def __insert_info(text_placeholder, shapes, standard_info, show_standard, standard_format):
+def __insert_info(
+    text_placeholder: SlidePlaceholders,
+    shapes: SlideShapes,
+    standard_info: dict[str],
+    show_standard: dict[str],
+    standard_format: dict[str],
+) -> None:
     if not isinstance(standard_info, dict):
         return
 
-    text_box = shapes.add_textbox(text_placeholder.left, text_placeholder.top, text_placeholder.width, text_placeholder.height)
+    text_box = shapes.add_textbox(
+        text_placeholder.left,
+        text_placeholder.top,
+        text_placeholder.width,
+        text_placeholder.height,
+    )
     text_box.text_frame.word_wrap = True
 
     first_standard_value = True
@@ -70,7 +82,12 @@ def __insert_info(text_placeholder, shapes, standard_info, show_standard, standa
     text_placeholder._element.getparent().remove(text_placeholder._element)
 
 
-def __insert_text(picture_placeholder, placeholder_to_remove, shapes, text):
+def __insert_text(
+    picture_placeholder: SlidePlaceholders,
+    placeholder_to_remove: SlidePlaceholders,
+    shapes: SlideShapes,
+    text: str,
+) -> None:
     # remove the obsolete text placeholder under the picture
     placeholder_to_remove._element.getparent().remove(placeholder_to_remove._element)
 
@@ -91,7 +108,7 @@ def __insert_text(picture_placeholder, placeholder_to_remove, shapes, text):
         left=picture_placeholder.left,
         top=picture_placeholder.top + ((picture_placeholder.height - th) / 2),
         width=picture_placeholder.width,
-        height=th
+        height=th,
     )
     text_box.text_frame.word_wrap = True
 
@@ -112,47 +129,59 @@ def __insert_text(picture_placeholder, placeholder_to_remove, shapes, text):
     picture_placeholder._element.getparent().remove(picture_placeholder._element)
 
 
-def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, asset_url, placeholder_image, placeholder_info):
-
-    if eas_id is None and asset_url is None:
-        if placeholder_info is None:
-            return
+def __insert_picture(
+    pack_dir: str,
+    exp_files: list[dict[str]],
+    picture_placeholder: SlidePlaceholders,
+    shapes: SlideShapes,
+    eas_id: int | None,
+    asset_url: str | None,
+    placeholder_image: str,
+    placeholder_info: str,
+) -> None:
 
     filename = None
     print_placeholder_info = False
 
-    if asset_url is not None:
-        try:
-            # download the image file, save it in the export asset folder
-            m = hashlib.sha1(asset_url)
-            filename = '{0}/{1}'.format(pack_dir, str(m.hexdigest()))
-
-            url_parts = asset_url.split('/')
-            if len(url_parts) > 1:
-                filename += '.{0}'.format(url_parts[-1])
-
-            pptx_util.download_export_file(asset_url, filename)
-        except Exception as e:
-            print('could not download connector image: {0}'.format(str(e)))
-            filename = placeholder_image
-            print_placeholder_info = True
-    else:
+    if eas_id is not None:
         for _file in exp_files:
             if not 'eas_id' in _file:
                 continue
             if _file['eas_id'] != eas_id:
                 continue
-            filename = os.path.abspath('{0}/{1}'.format(pack_dir, _file['path']))
+            filename = os.path.abspath(os.path.join(pack_dir, _file['path']))
             break
+    elif asset_url is not None:
+        try:
+            # download the image file, save it in the export asset folder
+            m = hashlib.sha1(asset_url)
+            filename = os.path.join(pack_dir, str(m.hexdigest()))
 
-        if filename is None:
+            url_parts = asset_url.split('/')
+            if len(url_parts) > 1:
+                filename += f'.{url_parts[-1]}'
+
+            pptx_util.download_export_file(asset_url, filename)
+        except Exception as e:
+            print('could not download connector image:', str(e))
+            filename = None
+    else:
+        filename = placeholder_image
+        print_placeholder_info = True
+
+    if filename is not None:
+        if not os.path.isfile(filename):
+            print(f'could not load exported file {filename}: not found')
             filename = placeholder_image
             print_placeholder_info = True
+    else:
+        filename = placeholder_image
+        print_placeholder_info = True
 
     try:
         img = Image.open(filename)
     except Exception as e:
-        print('could not load exported image {0}: {1}'.format(filename, str(e)))
+        print(f'could not load image {filename}: {str(e)}')
 
     try:
         # get placeholder size in emus
@@ -189,7 +218,7 @@ def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, a
                 left=new_x,
                 top=new_y + new_h - __pixels_to_emu(2 * (fontsize + 5)),
                 width=new_w,
-                height=__pixels_to_emu(fontsize + 5)
+                height=__pixels_to_emu(fontsize + 5),
             )
             text_box.text_frame.word_wrap = True
             p = text_box.text_frame.paragraphs[0]
@@ -204,10 +233,18 @@ def __insert_picture(pack_dir, exp_files, picture_placeholder, shapes, eas_id, a
         picture_placeholder.insert_picture(placeholder_image)
 
 
-def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
+def produce_files(
+    produce_opts: dict[str],
+    pack_dir: str,
+    export_files: list[dict[str]],
+    pptx_filename: str,
+) -> None:
 
     standard_format = __get_standard_format()
-    show_standard = pptx_util.get_json_value(produce_opts, 'presentation.settings.show_standard')
+    show_standard = pptx_util.get_json_value(
+        produce_opts,
+        'presentation.settings.show_standard',
+    )
     if isinstance(show_standard, str):
         show_standard = list(map(lambda s: s.strip(), show_standard.split()))
     else:
@@ -216,14 +253,28 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
     template = pptx_util.get_json_value(produce_opts, 'pptx_form.template', True)
 
     cur_dir = os.path.abspath(os.path.dirname(__file__))
-    prs = Presentation(os.path.join(cur_dir, '..', '..', 'templates', pptx_util.get_json_value(template, 'name', True)))
+    prs = Presentation(
+        os.path.join(
+            cur_dir,
+            '..',
+            '..',
+            'templates',
+            pptx_util.get_json_value(template, 'name', True),
+        )
+    )
     slide_layouts = {}
     for slide in pptx_util.get_json_value(template, 'slides', True):
         slide_layouts[slide['type']] = {
             'layout': prs.slide_layouts[slide['slide_idx']],
             'info': slide,
         }
-    placeholder_image = os.path.join(cur_dir, '..', '..', 'placeholders', pptx_util.get_json_value(template, 'placeholder', True))
+    placeholder_image = os.path.join(
+        cur_dir,
+        '..',
+        '..',
+        'placeholders',
+        pptx_util.get_json_value(template, 'placeholder', True),
+    )
 
     slide_id = -1
     for slide in pptx_util.get_json_value(produce_opts, 'presentation.slides', True):
@@ -382,7 +433,8 @@ def produce_files(produce_opts, pack_dir, export_files, pptx_filename):
                     ppt_slide.placeholders[sl_info['text_right']],
                     ppt_slide.placeholders[sl_info['text_box_to_remove']],
                     ppt_slide.shapes,
-                    text)
+                    text,
+                )
 
     pptx_util.create_missing_dirs(pptx_filename)
     prs.save(pptx_filename)

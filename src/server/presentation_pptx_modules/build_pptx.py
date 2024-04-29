@@ -134,8 +134,8 @@ def __insert_picture(
     exp_files: list[dict[str]],
     picture_placeholder: SlidePlaceholders,
     shapes: SlideShapes,
-    eas_id: int | None,
-    asset_url: str | None,
+    eas_id,
+    asset_url,
     placeholder_image: str,
     placeholder_info: str,
 ) -> None:

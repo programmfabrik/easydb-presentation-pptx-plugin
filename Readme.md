@@ -1,3 +1,5 @@
-# presentation-pptx Export Plugin
+# easydb-presentation-pptx-plugin
 
-Export plugin to download objects from collections as Powerpoint presentation (PPTX)
+Plugin for **easydb5** and **fylr**.
+
+Export plugin to download objects from collections as Powerpoint presentation (PPTX).

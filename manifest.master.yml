@@ -4,6 +4,17 @@ plugin:
   displayname:
     en-US: "Presentation PPTX Export Plugin"
     de-DE: "Präsentationen PPTX-Export Plugin"
+  info:
+    de-DE: |
+      Wandelt eine Collection in eine herunterladbare PowerPoint-Präsentation (PPTX) um. Nutzen Sie dieses Export-Plugin, wenn eine Auswahl von Datensätzen als fertige Foliensammlung statt als einfacher Export übergeben werden soll.
+
+      - Exportiert die Objekte einer Collection als PowerPoint-Datei (.pptx)
+      - Verfügbar für fylr und easydb5
+    en-US: |
+      Turn a collection into a downloadable PowerPoint (PPTX) presentation. Use this export plugin when you want to hand off a selection of records as a ready-to-open slide deck instead of a plain export.
+
+      - Exports the objects of a collection as a PowerPoint (.pptx) file
+      - Available for fylr and easydb5
   version: 1.0
   vendor: Programmfabrik GmbH
   server:
